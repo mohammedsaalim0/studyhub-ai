@@ -75,8 +75,9 @@ export default function SpaceBackground() {
     let mouseY = 0;
 
     const handleMouseMove = (e) => {
-      mouseX = (e.clientX - window.innerWidth / 2) * 0.05;
-      mouseY = (e.clientY - window.innerHeight / 2) * 0.05;
+      // Significantly reduced multiplier (from 0.05 to 0.004) for a subtle, authentic depth shift
+      mouseX = (e.clientX - window.innerWidth / 2) * 0.004;
+      mouseY = (e.clientY - window.innerHeight / 2) * 0.004;
     };
 
     window.addEventListener('mousemove', handleMouseMove);
@@ -84,13 +85,13 @@ export default function SpaceBackground() {
     const animate = (time) => {
       animationFrameId = requestAnimationFrame(animate);
 
-      // Slow rotation of starfield
-      starField.rotation.y = time * 0.00005;
-      starField.rotation.x = time * 0.00002;
+      // Very slow, soothing automatic rotation (reduced speed for total realism)
+      starField.rotation.y = time * 0.000015;
+      starField.rotation.x = time * 0.000006;
 
-      // Smooth camera drift based on mouse coordinates
-      camera.position.x += (mouseX - camera.position.x) * 0.05;
-      camera.position.y += (-mouseY - camera.position.y) * 0.05;
+      // High-dampening interpolation (reduced step from 0.05 to 0.015) for an ultra-smooth cinematic glide
+      camera.position.x += (mouseX - camera.position.x) * 0.015;
+      camera.position.y += (-mouseY - camera.position.y) * 0.015;
       camera.lookAt(scene.position);
 
       renderer.render(scene, camera);
