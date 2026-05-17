@@ -17,7 +17,7 @@ export default function SpaceBackground() {
       1,
       1000
     );
-    camera.position.z = 2.5;
+    camera.position.z = 2.4;
 
     // WebGL Renderer with Alpha support and high-performance settings
     const renderer = new THREE.WebGLRenderer({ 
@@ -28,20 +28,20 @@ export default function SpaceBackground() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-    // --- LIGHTS (Critical for metallic realism!) ---
-    const ambientLight = new THREE.AmbientLight(0xffffff, 0.4);
+    // --- LIGHTS (Crucial for realistic fluffy bunny shading!) ---
+    const ambientLight = new THREE.AmbientLight(0xffffff, 0.55);
     scene.add(ambientLight);
 
-    const dirLight = new THREE.DirectionalLight(0x00f2fe, 1.2);
-    dirLight.position.set(5, 5, 5);
+    const dirLight = new THREE.DirectionalLight(0xffebd2, 1.4); // Warm sunlight glow
+    dirLight.position.set(4, 5, 4);
     scene.add(dirLight);
 
-    const pointLight = new THREE.PointLight(0x9b51e0, 1.5, 10);
-    pointLight.position.set(-2, -1, 2);
-    scene.add(pointLight);
+    const softFillLight = new THREE.PointLight(0x00f2fe, 1.2, 8); // Cyber fill light from below-left
+    softFillLight.position.set(-3, -2, 2);
+    scene.add(softFillLight);
 
     // --- STARS GEOMETRY (PARTICLES BACKGROUND) ---
-    const starsCount = 1500;
+    const starsCount = 1200;
     const starGeometry = new THREE.BufferGeometry();
     const starPositions = new Float32Array(starsCount * 3);
     const starColors = new Float32Array(starsCount * 3);
@@ -68,128 +68,179 @@ export default function SpaceBackground() {
     starGeometry.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
 
     const starMaterial = new THREE.PointsMaterial({
-      size: 1.2,
+      size: 1.1,
       vertexColors: true,
       transparent: true,
-      opacity: 0.6,
+      opacity: 0.5,
       sizeAttenuation: true
     });
 
     const starField = new THREE.Points(starGeometry, starMaterial);
     scene.add(starField);
 
-    // --- PROGRAMMATIC 3D CYBER-RABBIT CREATION ---
+    // --- ORGANIC HIGHLY REALISTIC 3D RABBIT CREATION ---
     const rabbitGroup = new THREE.Group();
 
-    // Premium Cyberpunk metallic material
-    const cyberMat = new THREE.MeshStandardMaterial({
-      color: 0x1e293b,
-      metalness: 0.9,
-      roughness: 0.15,
-      bumpScale: 0.05
+    // 1. Soft Fluffy Fur Material (Velvety, high roughness, no metalness)
+    const furMat = new THREE.MeshStandardMaterial({
+      color: 0xfdfbf7,   // Gorgeous organic cream-white fluffy bunny color
+      roughness: 0.95,   // Soft non-reflective velvety texture (fur-like!)
+      metalness: 0.02
     });
 
-    // A. Main Body
-    const bodyGeo = new THREE.CapsuleGeometry(0.2, 0.4, 8, 16);
-    const body = new THREE.Mesh(bodyGeo, cyberMat);
-    body.position.y = -0.3;
+    const innerPinkMat = new THREE.MeshStandardMaterial({
+      color: 0xffb3c1,   // Soft organic warm pink for ears & nose
+      roughness: 0.85,
+      metalness: 0.01
+    });
+
+    // A. Fluffy Chubby Body (Spheroid / egg-shaped bunny body)
+    const bodyGeo = new THREE.SphereGeometry(0.25, 32, 32);
+    bodyGeo.scale(1, 1.28, 0.95); // Elongate to represent an organic rabbit posture
+    const body = new THREE.Mesh(bodyGeo, furMat);
+    body.position.y = -0.32;
     rabbitGroup.add(body);
 
-    // B. Neck Collar (Glowing Neon Ring)
-    const collarGeo = new THREE.TorusGeometry(0.18, 0.03, 8, 24);
-    const collarMat = new THREE.MeshBasicMaterial({ color: 0x9b51e0 });
-    const collar = new THREE.Mesh(collarGeo, collarMat);
-    collar.position.y = -0.08;
-    collar.rotation.x = Math.PI / 2;
-    rabbitGroup.add(collar);
+    // B. Fluffy Round Tail
+    const tailGeo = new THREE.SphereGeometry(0.065, 16, 16);
+    const tail = new THREE.Mesh(tailGeo, furMat);
+    tail.position.set(0, -0.48, -0.22);
+    rabbitGroup.add(tail);
 
-    // C. Head (Rotates to track the mouse!)
+    // C. Head Group (Central focus for mouse tracking)
     const headGroup = new THREE.Group();
-    headGroup.position.set(0, 0.1, 0);
+    headGroup.position.set(0, 0.06, 0);
 
-    const headGeo = new THREE.SphereGeometry(0.22, 32, 32);
-    const head = new THREE.Mesh(headGeo, cyberMat);
+    const headGeo = new THREE.SphereGeometry(0.18, 32, 32);
+    headGeo.scale(1.05, 0.96, 1); // Cute round chubby cheeks shape
+    const head = new THREE.Mesh(headGeo, furMat);
     headGroup.add(head);
 
-    // D. Left & Right Ears
-    const earGeo = new THREE.CapsuleGeometry(0.04, 0.28, 8, 16);
-    
+    // D. Organic Chubby Muzzle Cheeks
+    const cheekGeo = new THREE.SphereGeometry(0.05, 16, 16);
+    const leftCheek = new THREE.Mesh(cheekGeo, furMat);
+    leftCheek.position.set(-0.042, -0.04, 0.13);
+    headGroup.add(leftCheek);
+
+    const rightCheek = new THREE.Mesh(cheekGeo, furMat);
+    rightCheek.position.set(0.042, -0.04, 0.13);
+    headGroup.add(rightCheek);
+
+    // E. Cute Pink Nose
+    const noseGeo = new THREE.SphereGeometry(0.018, 12, 12);
+    const nose = new THREE.Mesh(noseGeo, innerPinkMat);
+    nose.position.set(0, -0.015, 0.178);
+    headGroup.add(nose);
+
+    // F. FLOATING FLOPPY ORGANIC EARS
+    const earGeo = new THREE.SphereGeometry(0.044, 16, 16);
+    earGeo.scale(1, 4.4, 0.28); // Elongated flat floppy ear geometry
+
     // Left Ear
-    const leftEar = new THREE.Mesh(earGeo, cyberMat);
-    leftEar.position.set(-0.09, 0.3, 0);
-    leftEar.rotation.z = 0.12;
+    const leftEar = new THREE.Mesh(earGeo, furMat);
+    leftEar.position.set(-0.08, 0.22, -0.01);
+    leftEar.rotation.z = 0.22;
+    leftEar.rotation.y = 0.08;
     headGroup.add(leftEar);
 
-    // Left Inner Glow (Neon Pink)
-    const innerEarGeo = new THREE.CapsuleGeometry(0.02, 0.22, 8, 16);
-    const innerEarMat = new THREE.MeshBasicMaterial({ color: 0xff007f });
-    const leftInner = new THREE.Mesh(innerEarGeo, innerEarMat);
-    leftInner.position.set(0, 0.02, 0.025);
+    // Left Inner Pink Ear
+    const innerEarGeo = new THREE.SphereGeometry(0.026, 16, 16);
+    innerEarGeo.scale(1, 3.6, 0.1);
+    const leftInner = new THREE.Mesh(innerEarGeo, innerPinkMat);
+    leftInner.position.set(0, 0.01, 0.022);
     leftEar.add(leftInner);
 
     // Right Ear
-    const rightEar = new THREE.Mesh(earGeo, cyberMat);
-    rightEar.position.set(0.09, 0.3, 0);
-    rightEar.rotation.z = -0.12;
+    const rightEar = new THREE.Mesh(earGeo, furMat);
+    rightEar.position.set(0.08, 0.22, -0.01);
+    rightEar.rotation.z = -0.22;
+    rightEar.rotation.y = -0.08;
     headGroup.add(rightEar);
 
-    // Right Inner Glow
-    const rightInner = new THREE.Mesh(innerEarGeo, innerEarMat);
-    rightInner.position.set(0, 0.02, 0.025);
+    // Right Inner Pink Ear
+    const rightInner = new THREE.Mesh(innerEarGeo, innerPinkMat);
+    rightInner.position.set(0, 0.01, 0.022);
     rightEar.add(rightInner);
 
-    // E. Left & Right Glowing Eyes (Neon Cyan)
-    const eyeGeo = new THREE.SphereGeometry(0.03, 16, 16);
-    const leftEyeMat = new THREE.MeshBasicMaterial({ color: 0x00f2fe });
-    const leftEye = new THREE.Mesh(eyeGeo, leftEyeMat);
-    leftEye.position.set(-0.08, 0.04, 0.18);
+    // G. HIGHLY REALISTIC GLASSY EYES WITH PUPILS & REFLECTIONS
+    const eyeScleraGeo = new THREE.SphereGeometry(0.032, 32, 32);
+    const glassyMat = new THREE.MeshStandardMaterial({
+      color: 0x080808,   // Highly polished deep obsidian-black iris
+      roughness: 0.02,   // Wet, glossy glassy finish!
+      metalness: 0.1
+    });
+
+    const leftEye = new THREE.Mesh(eyeScleraGeo, glassyMat);
+    leftEye.position.set(-0.082, 0.022, 0.135);
     headGroup.add(leftEye);
 
-    const rightEyeMat = new THREE.MeshBasicMaterial({ color: 0x00f2fe });
-    const rightEye = new THREE.Mesh(eyeGeo, rightEyeMat);
-    rightEye.position.set(0.08, 0.04, 0.18);
+    const rightEye = new THREE.Mesh(eyeScleraGeo, glassyMat);
+    rightEye.position.set(0.082, 0.022, 0.135);
     headGroup.add(rightEye);
 
-    // F. Little Glowing Nose (Neon Cyan)
-    const noseGeo = new THREE.SphereGeometry(0.02, 8, 8);
-    const noseMat = new THREE.MeshBasicMaterial({ color: 0xff007f });
-    const nose = new THREE.Mesh(noseGeo, noseMat);
-    nose.position.set(0, -0.02, 0.21);
-    headGroup.add(nose);
+    // Eye catchlights (little white shiny glints reflecting sky light!)
+    const catchlightGeo = new THREE.SphereGeometry(0.01, 8, 8);
+    const catchlightMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+    
+    const leftGlint = new THREE.Mesh(catchlightGeo, catchlightMat);
+    leftGlint.position.set(0.014, 0.014, 0.022); // Top-right offset
+    leftEye.add(leftGlint);
 
-    // G. Robotic Back paws
-    const pawGeo = new THREE.SphereGeometry(0.06, 16, 16);
-    const leftPaw = new THREE.Mesh(pawGeo, cyberMat);
-    leftPaw.position.set(-0.16, -0.5, 0.1);
-    rabbitGroup.add(leftPaw);
+    const rightGlint = new THREE.Mesh(catchlightGeo, catchlightMat);
+    rightGlint.position.set(0.014, 0.014, 0.022);
+    rightEye.add(rightGlint);
 
-    const rightPaw = new THREE.Mesh(pawGeo, cyberMat);
-    rightPaw.position.set(0.16, -0.5, 0.1);
-    rabbitGroup.add(rightPaw);
-
-    // Add head group to primary rabbit structure
-    rabbitGroup.add(headGroup);
-
-    // Offset placement of the Cyber-Rabbit to float beautifully in the right-center space
-    rabbitGroup.position.set(0.85, -0.3, 0.8);
-    scene.add(rabbitGroup);
-
-    // --- INTERACTION & EMOTIONS STATE ---
-    let mouseX = 0;
-    let mouseY = 0;
-    let excitedTicks = 0; // Number of animation ticks remaining in "Excited Mode"
-    let eyeBlinkTimer = 0;
-
-    const handleMouseMove = (e) => {
-      mouseX = (e.clientX - window.innerWidth / 2) * 0.002;
-      mouseY = (e.clientY - window.innerHeight / 2) * 0.002;
+    // H. Cute Whiskers (White detailed thin elements)
+    const whiskerMat = new THREE.LineBasicMaterial({ color: 0xe2e8f0 });
+    
+    const createWhisker = (points) => {
+      const wGeo = new THREE.BufferGeometry().setFromPoints(points);
+      return new THREE.Line(wGeo, whiskerMat);
     };
 
-    // Clicking anywhere triggers the rabbit's EXCITED backflip & green glow emotions!
+    // Left Whiskers
+    const lw1 = createWhisker([new THREE.Vector3(0, 0, 0), new THREE.Vector3(-0.16, 0.02, 0.02)]);
+    lw1.position.set(-0.05, -0.04, 0.135);
+    headGroup.add(lw1);
+
+    const lw2 = createWhisker([new THREE.Vector3(0, 0, 0), new THREE.Vector3(-0.17, -0.025, 0.01)]);
+    lw2.position.set(-0.05, -0.04, 0.135);
+    headGroup.add(lw2);
+
+    // Right Whiskers
+    const rw1 = createWhisker([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0.16, 0.02, 0.02)]);
+    rw1.position.set(0.05, -0.04, 0.135);
+    headGroup.add(rw1);
+
+    const rw2 = createWhisker([new THREE.Vector3(0, 0, 0), new THREE.Vector3(0.17, -0.025, 0.01)]);
+    rw2.position.set(0.05, -0.04, 0.135);
+    headGroup.add(rw2);
+
+    // Add head to base rabbit structure
+    rabbitGroup.add(headGroup);
+
+    // Position the fluffy rabbit in the dead center, floating peacefully behind text cards
+    rabbitGroup.position.set(0, -0.4, 0.4);
+    scene.add(rabbitGroup);
+
+    // --- INTERACTION & 3D LOOK-AT TARGET TRACKING ---
+    let mouseX = 0;
+    let mouseY = 0;
+    let excitedTicks = 0;
+    let eyeBlinkTimer = 0;
+    
+    // Smooth 3D look-at target vector
+    const targetLookAt = new THREE.Vector3(0, 0, 1.5);
+
+    const handleMouseMove = (e) => {
+      // Offset values scaled to follow cursor coordinates exactly
+      mouseX = (e.clientX - window.innerWidth / 2) / (window.innerWidth / 2);
+      mouseY = -(e.clientY - window.innerHeight / 2) / (window.innerHeight / 2);
+    };
+
+    // Click triggers excited jump and wiggles!
     const handleScreenClick = () => {
-      excitedTicks = 70; // 70 frames of high-speed backflip!
-      leftEyeMat.color.setHex(0x05f3a2); // Turn eyes Emerald (Excited!)
-      rightEyeMat.color.setHex(0x05f3a2);
+      excitedTicks = 75;
     };
 
     window.addEventListener('mousemove', handleMouseMove);
@@ -201,23 +252,23 @@ export default function SpaceBackground() {
     const animate = (time) => {
       animationFrameId = requestAnimationFrame(animate);
 
-      // 1. Slow cosmic background drifting
-      starField.rotation.y = time * 0.000004;
-      starField.rotation.x = time * 0.0000015;
+      // 1. Ultra-slow background stellar rotation
+      starField.rotation.y = time * 0.000003;
+      starField.rotation.x = time * 0.000001;
 
       // 2. Slow breathing background camera glide
-      camera.position.x += (mouseX * 0.5 - camera.position.x) * 0.006;
-      camera.position.y += (-mouseY * 0.5 - camera.position.y) * 0.006;
+      camera.position.x += (mouseX * 0.2 - camera.position.x) * 0.006;
+      camera.position.y += (mouseY * 0.2 - camera.position.y) * 0.006;
       camera.lookAt(scene.position);
 
-      // 3. Cyber-Rabbit breathing movement
-      const breathe = Math.sin(time * 0.0015) * 0.02;
-      body.position.y = -0.3 + breathe;
-      headGroup.position.y = 0.1 + breathe * 1.5;
+      // 3. Gentle breathing cycles
+      const breathe = Math.sin(time * 0.0016) * 0.015;
+      body.position.y = -0.32 + breathe;
+      headGroup.position.y = 0.06 + breathe * 1.3;
 
-      // 4. Natural blinks
+      // 4. Blinking cycles
       eyeBlinkTimer += 1;
-      if (eyeBlinkTimer % 200 === 0) {
+      if (eyeBlinkTimer % 230 === 0) {
         leftEye.scale.y = 0;
         rightEye.scale.y = 0;
       } else if (leftEye.scale.y === 0) {
@@ -225,41 +276,49 @@ export default function SpaceBackground() {
         rightEye.scale.y = 1;
       }
 
-      // 5. EMOTIONS INTERPOLATOR (Happy vs. Excited)
+      // 5. EMOTIONS & MATHS 3D TARGET TRACKING
       if (excitedTicks > 0) {
         excitedTicks--;
 
-        // A. Excited Backflip animation!
-        rabbitGroup.rotation.x += (Math.PI * 2) / 70; // 360-degree flip over 70 frames
-        rabbitGroup.position.y = -0.3 + Math.sin((excitedTicks / 70) * Math.PI) * 0.4; // Jump up!
+        // A. Excited backflip animation curves!
+        rabbitGroup.rotation.x += (Math.PI * 2) / 75;
+        rabbitGroup.position.y = -0.4 + Math.sin((excitedTicks / 75) * Math.PI) * 0.35;
 
-        // B. Wild excited ear-wiggling
-        leftEar.rotation.x = Math.sin(time * 0.02) * 0.6;
-        rightEar.rotation.x = Math.cos(time * 0.02) * 0.6;
-        leftEar.rotation.z = 0.12 + Math.sin(time * 0.035) * 0.3;
-        rightEar.rotation.z = -0.12 - Math.sin(time * 0.035) * 0.3;
+        // B. Dynamic excited ear-wiggles
+        leftEar.rotation.x = Math.sin(time * 0.02) * 0.4;
+        rightEar.rotation.x = Math.cos(time * 0.02) * 0.4;
+        leftEar.rotation.z = 0.22 + Math.sin(time * 0.03) * 0.2;
+        rightEar.rotation.z = -0.22 - Math.sin(time * 0.03) * 0.2;
 
-        // C. Restore peaceful eyes color when finished
         if (excitedTicks === 0) {
-          leftEyeMat.color.setHex(0x00f2fe); // Reset eyes to Neon Cyan
-          rightEyeMat.color.setHex(0x00f2fe);
           rabbitGroup.rotation.x = 0;
-          rabbitGroup.position.y = -0.3;
+          rabbitGroup.position.y = -0.4;
         }
       } else {
-        // --- HAPPY MODE (PEACEFUL DRIFT) ---
-        // Head smoothly turns to track the mouse coordinates in 3D
-        const targetRotY = mouseX * 2.5;
-        const targetRotX = -mouseY * 1.5;
+        // --- HAPPY MODE & 3D LOOK AT TRACKING ---
+        // Project screen cursor coordinates into a real 3D target coordinates exactly in front of head Group
+        const mouse3D = new THREE.Vector3(
+          mouseX * 1.8, 
+          mouseY * 1.2, 
+          1.6 // Depth offset in front of head group
+        );
 
-        headGroup.rotation.y += (targetRotY - headGroup.rotation.y) * 0.06;
-        headGroup.rotation.x += (targetRotX - headGroup.rotation.x) * 0.06;
+        // Smoothly interpolate the target coordinates vector to remove any screen stutter
+        targetLookAt.x += (mouse3D.x - targetLookAt.x) * 0.08;
+        targetLookAt.y += (mouse3D.y - targetLookAt.y) * 0.08;
+        targetLookAt.z += (mouse3D.z - targetLookAt.z) * 0.08;
 
-        // Gentle, happy wiggles in the ears
-        leftEar.rotation.z = 0.12 + Math.sin(time * 0.001) * 0.06;
-        rightEar.rotation.z = -0.12 - Math.cos(time * 0.001) * 0.06;
-        leftEar.rotation.x = Math.sin(time * 0.0008) * 0.08;
-        rightEar.rotation.x = Math.sin(time * 0.0008) * 0.08;
+        // Make head look directly at target coordinates!
+        headGroup.lookAt(targetLookAt);
+
+        // Gentle, authentic nose twitching
+        nose.position.y = -0.015 + Math.sin(time * 0.015) * 0.003;
+
+        // Gentle, floppy ear sway
+        leftEar.rotation.z = 0.22 + Math.sin(time * 0.001) * 0.04;
+        rightEar.rotation.z = -0.22 - Math.cos(time * 0.001) * 0.04;
+        leftEar.rotation.x = Math.sin(time * 0.0008) * 0.05;
+        rightEar.rotation.x = Math.sin(time * 0.0008) * 0.05;
       }
 
       renderer.render(scene, camera);
@@ -267,26 +326,26 @@ export default function SpaceBackground() {
 
     animate(0);
 
-    // --- DYNAMIC RESIZE HANDLER ---
+    // --- RESPONSIVE RESIZE CONFIGURATION ---
     const handleResize = () => {
       camera.aspect = window.innerWidth / window.innerHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
 
-      // Reposition rabbit slightly on mobile so it doesn't obstruct central text
+      // Reposition dynamically for mobile so it fits behind frosted cards beautifully
       if (window.innerWidth < 768) {
-        rabbitGroup.position.set(0, -0.7, 0.4);
-        rabbitGroup.scale.set(0.7, 0.7, 0.7);
+        rabbitGroup.position.set(0, -0.58, 0.4);
+        rabbitGroup.scale.set(0.72, 0.72, 0.72);
       } else {
-        rabbitGroup.position.set(0.85, -0.3, 0.8);
-        rabbitGroup.scale.set(1, 1, 1);
+        rabbitGroup.position.set(0, -0.4, 0.45);
+        rabbitGroup.scale.set(1.05, 1.05, 1.05);
       }
     };
 
     window.addEventListener('resize', handleResize);
-    handleResize(); // Initial sizing call
+    handleResize();
 
-    // --- CLEANUP ON UNMOUNT ---
+    // --- CLEANUP ON DISMOUNT ---
     return () => {
       cancelAnimationFrame(animationFrameId);
       window.removeEventListener('mousemove', handleMouseMove);
@@ -295,19 +354,19 @@ export default function SpaceBackground() {
       starGeometry.dispose();
       starMaterial.dispose();
       bodyGeo.dispose();
-      collarGeo.dispose();
+      tailGeo.dispose();
       headGeo.dispose();
+      cheekGeo.dispose();
+      noseGeo.dispose();
       earGeo.dispose();
       innerEarGeo.dispose();
-      eyeGeo.dispose();
-      noseGeo.dispose();
-      pawGeo.dispose();
-      cyberMat.dispose();
-      collarMat.dispose();
-      innerEarMat.dispose();
-      leftEyeMat.dispose();
-      rightEyeMat.dispose();
-      noseMat.dispose();
+      eyeScleraGeo.dispose();
+      catchlightGeo.dispose();
+      furMat.dispose();
+      innerPinkMat.dispose();
+      glassyMat.dispose();
+      catchlightMat.dispose();
+      whiskerMat.dispose();
     };
   }, []);
 
