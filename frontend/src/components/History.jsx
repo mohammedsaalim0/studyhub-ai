@@ -34,14 +34,17 @@ export default function History({ tasks, notes, plans }) {
 
     // 1. Completed Tasks History
     tasks.filter(t => t.completed).forEach(task => {
+      const isLate = task.completedLate;
       activities.push({
         id: `task-${task.id}`,
         type: 'task',
-        title: `Task Completed: ${task.title}`,
+        title: isLate ? `Time-delayed Completion: ${task.title}` : `Task Completed: ${task.title}`,
         subtitle: `Subject: ${task.subject || 'General'}`,
         timestamp: task.updatedAt || task.createdAt || new Date().toISOString(),
-        details: 'You checked off this task and successfully mastered this exam topic!',
-        color: 'var(--neon-emerald)',
+        details: isLate 
+          ? `⚠️ Time-delayed Completion: You checked off this task late with a delay of ${task.lateDelayStr || 'a few moments'} after the deadline.`
+          : 'You checked off this task and successfully mastered this exam topic!',
+        color: isLate ? 'var(--neon-amber)' : 'var(--neon-emerald)',
         icon: <CheckCircle2 size={16} />
       });
     });

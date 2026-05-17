@@ -161,7 +161,7 @@ app.post('/api/tasks', authenticateToken, (req, res) => {
 // Update Task (Toggle complete, modify details)
 app.put('/api/tasks/:id', authenticateToken, (req, res) => {
   const { id } = req.params;
-  const { title, description, subject, deadline, completed } = req.body;
+  const { title, description, subject, deadline, completed, completedLate, lateDelayStr } = req.body;
 
   const task = db.findOne('tasks', { id, userId: req.user.id });
   if (!task) {
@@ -179,7 +179,13 @@ app.put('/api/tasks/:id', authenticateToken, (req, res) => {
       updates.smsSent = false;
     }
   }
-  if (completed !== undefined) updates.completed = completed;
+  if (completed !== undefined) {
+    updates.completed = completed;
+    // Track completion time for fine history records
+    updates.updatedAt = new Date().toISOString();
+  }
+  if (completedLate !== undefined) updates.completedLate = completedLate;
+  if (lateDelayStr !== undefined) updates.lateDelayStr = lateDelayStr;
 
   db.update('tasks', { id, userId: req.user.id }, updates);
   const updatedTask = db.findOne('tasks', { id });

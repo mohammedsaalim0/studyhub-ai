@@ -63,15 +63,41 @@ export default function Tasks({ tasks, refreshData }) {
 
   const handleToggleComplete = async (task) => {
     try {
+      const nextCompleted = !task.completed;
+      let completedLate = false;
+      let lateDelayStr = null;
+
+      if (nextCompleted) {
+        const diff = new Date() - new Date(task.deadline);
+        if (diff > 0) {
+          completedLate = true;
+          const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+          const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+          const mins = Math.floor((diff / 1000 / 60) % 60);
+          const secs = Math.floor((diff / 1000) % 60);
+          
+          let lateString = '';
+          if (days > 0) lateString += `${days}d `;
+          if (hours > 0 || days > 0) lateString += `${hours}h `;
+          lateString += `${mins}m ${secs}s`;
+          lateDelayStr = lateString;
+        }
+      }
+
       const res = await authFetch(`/api/tasks/${task.id}`, {
         method: 'PUT',
-        body: JSON.stringify({ completed: !task.completed })
+        body: JSON.stringify({ 
+          completed: nextCompleted,
+          completedLate,
+          lateDelayStr
+        })
       });
+
       if (res.ok) {
         playChime();
         
         // Dispatch custom victory event to make the 3D rabbit super happy and dance!
-        if (!task.completed) {
+        if (nextCompleted) {
           window.dispatchEvent(new CustomEvent('study-task-completed'));
         }
         
