@@ -113,8 +113,12 @@ function MainAppContent() {
 
         // Continually dispatch dynamic late counter to SpaceBackground so rabbit stays sad
         const lateString = `${days > 0 ? days + 'd ' : ''}${hours > 0 ? hours + 'h ' : ''}${mins}m ${secs}s`;
+        const shouldShowHeadache = (secs >= 0 && secs < 5);
         window.dispatchEvent(new CustomEvent('study-late-countdown', {
-          detail: { timeString: lateString }
+          detail: { 
+            timeString: lateString,
+            showHeadache: shouldShowHeadache
+          }
         }));
       } else {
         // Task is in the future

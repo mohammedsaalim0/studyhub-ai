@@ -7,6 +7,8 @@ export default function SpaceBackground() {
   const [showVictoryCloud, setShowVictoryCloud] = useState(false);
   const [lateTimeStr, setLateTimeStr] = useState('');
   const lateTimeStrRef = useRef('');
+  const [activeHeadache, setActiveHeadache] = useState(false);
+  const activeHeadacheRef = useRef(false);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -528,11 +530,15 @@ export default function SpaceBackground() {
     const handleLateCountdown = (e) => {
       setLateTimeStr(e.detail.timeString);
       lateTimeStrRef.current = e.detail.timeString;
+      setActiveHeadache(e.detail.showHeadache);
+      activeHeadacheRef.current = e.detail.showHeadache;
     };
 
     const handleLateReset = () => {
       setLateTimeStr('');
       lateTimeStrRef.current = '';
+      setActiveHeadache(false);
+      activeHeadacheRef.current = false;
     };
 
     window.addEventListener('mousemove', handleMouseMove);
@@ -583,7 +589,7 @@ export default function SpaceBackground() {
       rightGlint.visible = true;
 
       // ANIMATIONS ACCORDING TO STATE (Late/Headache > Angry > Dance/Happy > Hovered > Excited > Peaceful)
-      if (lateTimeStrRef.current) {
+      if (lateTimeStrRef.current && activeHeadacheRef.current) {
         // --- SAD HEADACHE LATE STATE (X X eyes!) ---
         leftX.visible = true;
         rightX.visible = true;
@@ -821,7 +827,7 @@ export default function SpaceBackground() {
       `}</style>
 
       {/* Sad Headache Late Thought Cloud bubble (Updates counter dynamically!) */}
-      {lateTimeStr && (
+      {lateTimeStr && activeHeadache && (
         <div className="thought-cloud-bubble" style={{
           position: 'fixed',
           top: 'calc(50% - 210px)',
