@@ -16,6 +16,14 @@ const JWT_SECRET = process.env.JWT_SECRET || 'STUDY_HUB_ULTIMATE_NEON_SECRET_202
 app.use(cors());
 app.use(express.json({ limit: '50mb' })); // Support base64 file uploads in JSON
 
+// Transparently strip Vercel's routePrefix (/_/backend) to support multi-service proxying
+app.use((req, res, next) => {
+  if (req.url.startsWith('/_/backend')) {
+    req.url = req.url.substring('/_/backend'.length);
+  }
+  next();
+});
+
 // --- AUTHENTICATION MIDDLEWARE ---
 function authenticateToken(req, res, next) {
   const authHeader = req.headers['authorization'];
