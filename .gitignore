@@ -1,0 +1,32 @@
+# Dependency folders
+node_modules/
+backend/node_modules/
+frontend/node_modules/
+
+# Local databases, backups & temp logs
+backend/data.json
+backend/data.json.tmp
+backend/data.json.bak
+*.log
+npm-debug.log*
+
+# Production build outputs
+frontend/dist/
+frontend/build/
+
+# Credentials & local env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Editor files
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
