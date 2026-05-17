@@ -6,9 +6,11 @@ import Tasks from './components/Tasks';
 import Library from './components/Library';
 import AiPlanner from './components/AiPlanner';
 import Settings from './components/Settings';
+import History from './components/History';
+import SpaceBackground from './components/SpaceBackground';
 import { 
   BookOpen, Clock, Brain, Settings as SettingsIcon, 
-  LogOut, Shield, User
+  LogOut, Shield, User, History as HistoryIcon
 } from 'lucide-react';
 import { playChime } from './utils/sound';
 
@@ -54,7 +56,12 @@ function MainAppContent() {
   }, [user]);
 
   if (!user) {
-    return <Login />;
+    return (
+      <>
+        <SpaceBackground />
+        <Login />
+      </>
+    );
   }
 
   const renderActiveComponent = () => {
@@ -75,6 +82,8 @@ function MainAppContent() {
         return <Library notes={notes} refreshData={refreshData} />;
       case 'ai-planner':
         return <AiPlanner plans={plans} refreshData={refreshData} />;
+      case 'history':
+        return <History tasks={tasks} notes={notes} plans={plans} />;
       case 'settings':
         return <Settings />;
       default:
@@ -97,6 +106,9 @@ function MainAppContent() {
 
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
+      
+      {/* Animated 3D Three.js Deep Space Starry background */}
+      <SpaceBackground />
       
       {/* Background Neon Orbs */}
       <div className="bg-orb orb-violet"></div>
@@ -153,7 +165,8 @@ function MainAppContent() {
             { id: 'dashboard', label: 'Dashboard' },
             { id: 'tasks', label: 'Tasks' },
             { id: 'library', label: 'My Library' },
-            { id: 'ai-planner', label: 'AI Study Plan' }
+            { id: 'ai-planner', label: 'AI Study Plan' },
+            { id: 'history', label: 'Ledger' }
           ].map(tab => (
             <button 
               key={tab.id}
