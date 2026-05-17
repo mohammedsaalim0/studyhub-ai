@@ -75,9 +75,9 @@ export default function SpaceBackground() {
     let mouseY = 0;
 
     const handleMouseMove = (e) => {
-      // Significantly reduced multiplier (from 0.05 to 0.004) for a subtle, authentic depth shift
-      mouseX = (e.clientX - window.innerWidth / 2) * 0.004;
-      mouseY = (e.clientY - window.innerHeight / 2) * 0.004;
+      // Near-static mouse tracking (multiplier reduced to 0.0015) for a very subtle, high-class depth shift
+      mouseX = (e.clientX - window.innerWidth / 2) * 0.0015;
+      mouseY = (e.clientY - window.innerHeight / 2) * 0.0015;
     };
 
     window.addEventListener('mousemove', handleMouseMove);
@@ -85,13 +85,13 @@ export default function SpaceBackground() {
     const animate = (time) => {
       animationFrameId = requestAnimationFrame(animate);
 
-      // Very slow, soothing automatic rotation (reduced speed for total realism)
-      starField.rotation.y = time * 0.000015;
-      starField.rotation.x = time * 0.000006;
+      // Ultra-slow, breathing galactic rotation (nearly static but alive!)
+      starField.rotation.y = time * 0.000004;
+      starField.rotation.x = time * 0.0000015;
 
-      // High-dampening interpolation (reduced step from 0.05 to 0.015) for an ultra-smooth cinematic glide
-      camera.position.x += (mouseX - camera.position.x) * 0.015;
-      camera.position.y += (-mouseY - camera.position.y) * 0.015;
+      // Ultra-high-dampening interpolation (step reduced to 0.006) for a slow breathing transition
+      camera.position.x += (mouseX - camera.position.x) * 0.006;
+      camera.position.y += (-mouseY - camera.position.y) * 0.006;
       camera.lookAt(scene.position);
 
       renderer.render(scene, camera);
