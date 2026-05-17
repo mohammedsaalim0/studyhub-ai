@@ -303,11 +303,7 @@ export default function Tasks({ tasks, refreshData }) {
 
       {/* Task List Grid */}
       {filteredTasks.length > 0 ? (
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-          gap: '20px'
-        }}>
+        <div className="responsive-grid" style={{ gap: '20px' }}>
           {filteredTasks.map(task => {
             const isOverdue = new Date(task.deadline) < new Date() && !task.completed;
             return (

@@ -146,10 +146,7 @@ export default function AiPlanner({ plans, refreshData }) {
   };
 
   return (
-    <div className="fade-in" style={{
-      display: 'grid',
-      gridTemplateColumns: '280px 1fr',
-      gap: '24px',
+    <div className="fade-in library-layout-grid" style={{
       minHeight: 'calc(100vh - 160px)',
       padding: '10px 0'
     }}>

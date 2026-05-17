@@ -97,11 +97,7 @@ export default function Settings() {
         </p>
       </div>
 
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-        gap: '24px'
-      }}>
+      <div className="responsive-grid">
         
         {/* SETTINGS FORM */}
         <div className="glass-panel glow-cyan" style={{ padding: '30px' }}>

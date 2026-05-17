@@ -194,10 +194,7 @@ export default function Library({ notes, refreshData }) {
   const folderNotes = notes.filter(n => n.folderName === selectedFolder);
 
   return (
-    <div className="fade-in" style={{
-      display: 'grid',
-      gridTemplateColumns: '260px 1fr',
-      gap: '24px',
+    <div className="fade-in library-layout-grid" style={{
       minHeight: 'calc(100vh - 160px)',
       padding: '10px 0'
     }}>

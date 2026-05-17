@@ -147,12 +147,7 @@ export default function Dashboard({
       </div>
 
       {/* Main Layout Rows */}
-      <div style={{
-        display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
-        gap: '24px',
-        marginBottom: '24px'
-      }}>
+      <div className="responsive-grid" style={{ marginBottom: '24px' }}>
         
         {/* Countdown & Reminders */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
