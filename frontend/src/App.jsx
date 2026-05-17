@@ -61,19 +61,25 @@ function MainAppContent() {
     }
   };
 
-  // Find next upcoming task deadline (Always active in parent)
+  // Find most urgent uncompleted task (prioritizing overdue tasks first, then nearest future tasks)
   useEffect(() => {
-    const upcoming = tasks
-      .filter(t => !t.completed && new Date(t.deadline) > new Date())
-      .sort((a, b) => new Date(a.deadline) - new Date(b.deadline))[0];
+    const uncompleted = tasks.filter(t => !t.completed);
+    if (uncompleted.length === 0) {
+      setNextTask(null);
+      window.dispatchEvent(new CustomEvent('study-late-reset'));
+      return;
+    }
     
-    setNextTask(upcoming || null);
+    // Sort oldest deadline first (places overdue tasks at top [0])
+    const sorted = uncompleted.sort((a, b) => new Date(a.deadline) - new Date(b.deadline));
+    setNextTask(sorted[0]);
   }, [tasks]);
 
-  // Update countdown clock & handle deadline alerts inside parent (Continuously running)
+  // Update countdown clock (keeps ticking into negative late territory if missed!)
   useEffect(() => {
     if (!nextTask) {
       setTimeLeft('');
+      window.dispatchEvent(new CustomEvent('study-late-reset'));
       return;
     }
 
@@ -81,16 +87,37 @@ function MainAppContent() {
       const diff = new Date(nextTask.deadline) - new Date();
       
       if (diff <= 0) {
-        setTimeLeft('DEADLINE REACHED! 🚨');
-        playAlarm();
-        window.dispatchEvent(new CustomEvent('study-deadline-expired'));
-        
+        // Task is OVERDUE (Time's Up - start negative counting!)
+        const absDiff = Math.abs(diff);
+        const days = Math.floor(absDiff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((absDiff / (1000 * 60 * 60)) % 24);
+        const mins = Math.floor((absDiff / 1000 / 60) % 60);
+        const secs = Math.floor((absDiff / 1000) % 60);
+
+        let timeStr = '-';
+        if (days > 0) timeStr += `${days}d `;
+        if (hours > 0 || days > 0) timeStr += `${hours}h `;
+        timeStr += `${mins}m ${secs}s LATE 🚨`;
+
+        setTimeLeft(timeStr);
+
+        // Dispatch alarms & events once per task expiration
         if (!activeAlerts.includes(nextTask.id)) {
           setActiveAlerts(prev => [...prev, nextTask.id]);
+          playAlarm();
+          window.dispatchEvent(new CustomEvent('study-deadline-expired'));
           refreshData(); // Refresh tasks status
         }
-        clearInterval(interval);
+
+        // Continually dispatch dynamic late counter to SpaceBackground so rabbit stays sad
+        const lateString = `${days > 0 ? days + 'd ' : ''}${hours > 0 ? hours + 'h ' : ''}${mins}m ${secs}s`;
+        window.dispatchEvent(new CustomEvent('study-late-countdown', {
+          detail: { timeString: lateString }
+        }));
       } else {
+        // Task is in the future
+        window.dispatchEvent(new CustomEvent('study-late-reset'));
+
         const days = Math.floor(diff / (1000 * 60 * 60 * 24));
         const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
         const mins = Math.floor((diff / 1000 / 60) % 60);

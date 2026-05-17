@@ -5,6 +5,7 @@ export default function SpaceBackground() {
   const containerRef = useRef(null);
   const [showCloud, setShowCloud] = useState(false);
   const [showVictoryCloud, setShowVictoryCloud] = useState(false);
+  const [lateTimeStr, setLateTimeStr] = useState('');
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -46,7 +47,7 @@ export default function SpaceBackground() {
     const starsCount = 1200;
     const starGeometry = new THREE.BufferGeometry();
     const starPositions = new Float32Array(starsCount * 3);
-    const starColors = new Float32Array(starsCount * 3);
+    const starFieldColors = new Float32Array(starsCount * 3);
 
     const colorPalette = [
       new THREE.Color('#00f2fe'), // Cyan
@@ -61,13 +62,13 @@ export default function SpaceBackground() {
       starPositions[i + 2] = (Math.random() - 0.5) * 800;
 
       const color = colorPalette[Math.floor(Math.random() * colorPalette.length)];
-      starColors[i] = color.r;
-      starColors[i + 1] = color.g;
-      starColors[i + 2] = color.b;
+      starFieldColors[i] = color.r;
+      starFieldColors[i + 1] = color.g;
+      starFieldColors[i + 2] = color.b;
     }
 
     starGeometry.setAttribute('position', new THREE.BufferAttribute(starPositions, 3));
-    starGeometry.setAttribute('color', new THREE.BufferAttribute(starColors, 3));
+    starGeometry.setAttribute('color', new THREE.BufferAttribute(starFieldColors, 3));
 
     const starMaterial = new THREE.PointsMaterial({
       size: 1.1,
@@ -189,6 +190,31 @@ export default function SpaceBackground() {
     const rightGlint = new THREE.Mesh(catchlightGeo, catchlightMat);
     rightGlint.position.set(0.014, 0.014, 0.022);
     rightEye.add(rightGlint);
+
+    // --- (X X) CROSS EYES FOR HEADACHE/LATE STATE ---
+    const createXMesh = () => {
+      const xGroup = new THREE.Group();
+      const barMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+      
+      const bar1 = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.046, 0.012), barMat);
+      bar1.rotation.z = Math.PI / 4;
+      xGroup.add(bar1);
+      
+      const bar2 = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.046, 0.012), barMat);
+      bar2.rotation.z = -Math.PI / 4;
+      xGroup.add(bar2);
+      
+      xGroup.position.set(0, 0, 0.022); // Position in front of eye pupil
+      return xGroup;
+    };
+
+    const leftX = createXMesh();
+    leftEye.add(leftX);
+    leftX.visible = false;
+
+    const rightX = createXMesh();
+    rightEye.add(rightX);
+    rightX.visible = false;
 
     // H. Cute Whiskers (White detailed thin elements)
     const whiskerMat = new THREE.LineBasicMaterial({ color: 0xe2e8f0 });
@@ -483,9 +509,10 @@ export default function SpaceBackground() {
 
     // Trigger Victory Dance State when a task is completed!
     const handleTaskCompleted = () => {
-      // Clear anger states if running
+      // Clear anger/sadness states if running
       angryTicks = 0;
       setShowCloud(false);
+      setLateTimeStr('');
 
       danceTicks = 420; // 7 seconds of high-energy dancing joy!
       setShowVictoryCloud(true);
@@ -496,11 +523,22 @@ export default function SpaceBackground() {
       }, 7000);
     };
 
+    // Trigger headache state on negative late countdown update
+    const handleLateCountdown = (e) => {
+      setLateTimeStr(e.detail.timeString);
+    };
+
+    const handleLateReset = () => {
+      setLateTimeStr('');
+    };
+
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('click', handleScreenClick);
     window.addEventListener('studyhub-section-changed', handleSectionChanged);
     window.addEventListener('study-deadline-expired', handleDeadlineExpired);
     window.addEventListener('study-task-completed', handleTaskCompleted);
+    window.addEventListener('study-late-countdown', handleLateCountdown);
+    window.addEventListener('study-late-reset', handleLateReset);
 
     // --- ANIMATION LOOP ---
     let animationFrameId;
@@ -535,8 +573,39 @@ export default function SpaceBackground() {
       const breathe = Math.sin(time * 0.0016) * 0.015;
       body.position.y = -0.32 + breathe;
 
-      // ANIMATIONS ACCORDING TO STATE (Angry > Dance/Happy > Hovered > Excited > Peaceful)
-      if (angryTicks > 0) {
+      // Reset X-eyes state to false by default inside active loops
+      leftX.visible = false;
+      rightX.visible = false;
+      leftGlint.visible = true;
+      rightGlint.visible = true;
+
+      // ANIMATIONS ACCORDING TO STATE (Late/Headache > Angry > Dance/Happy > Hovered > Excited > Peaceful)
+      if (lateTimeStr) {
+        // --- SAD HEADACHE LATE STATE (X X eyes!) ---
+        leftX.visible = true;
+        rightX.visible = true;
+        leftGlint.visible = false;
+        rightGlint.visible = false;
+
+        leftEye.material.color.setHex(0xff003c); // Glowing angry red pupils under the crosses
+        rightEye.material.color.setHex(0xff003c);
+
+        // Fully drooping floppy ears flat down
+        leftEar.rotation.z = 0.85;
+        rightEar.rotation.z = -0.85;
+        leftEar.rotation.x = 0.48;
+        rightEar.rotation.x = 0.48;
+
+        // Headache animation: slow dizzy head wobbling and swaying in distress
+        headGroup.rotation.z = Math.sin(time * 0.012) * 0.16;
+        headGroup.rotation.y = Math.sin(time * 0.018) * 0.13;
+        headGroup.rotation.x = 0.08 + Math.sin(time * 0.008) * 0.06;
+
+        // Heavy breathing body position
+        const heavyBreathe = Math.sin(time * 0.004) * 0.03;
+        body.position.y = -0.32 + heavyBreathe;
+        headGroup.position.y = 0.06 + heavyBreathe * 0.8;
+      } else if (angryTicks > 0) {
         angryTicks--;
 
         leftEye.material.color.setHex(0xff003c); // Neon Red eyes
@@ -604,6 +673,9 @@ export default function SpaceBackground() {
         leftEye.scale.y = 0.05;
         rightEye.scale.y = 0.05;
 
+        leftEye.material.color.setHex(0x080808);
+        rightEye.material.color.setHex(0x080808);
+
         headGroup.rotation.y = Math.sin(time * 0.0035) * 0.16;
         headGroup.rotation.x = -0.04 + Math.sin(time * 0.002) * 0.03;
         headGroup.rotation.z = Math.sin(time * 0.002) * 0.04;
@@ -619,6 +691,8 @@ export default function SpaceBackground() {
         
         leftEye.scale.y = 1;
         rightEye.scale.y = 1;
+        leftEye.material.color.setHex(0x080808);
+        rightEye.material.color.setHex(0x080808);
 
         const progress = (75 - excitedTicks) / 75;
         rabbitGroup.rotation.x = progress * Math.PI * 2;
@@ -637,6 +711,8 @@ export default function SpaceBackground() {
         // --- PEACEFUL LOOK AT MOUSE MODE ---
         leftEye.scale.y = 1;
         rightEye.scale.y = 1;
+        leftEye.material.color.setHex(0x080808);
+        rightEye.material.color.setHex(0x080808);
 
         const mouse3D = new THREE.Vector3(
           mouseX * 1.8, 
@@ -700,6 +776,8 @@ export default function SpaceBackground() {
       window.removeEventListener('studyhub-section-changed', handleSectionChanged);
       window.removeEventListener('study-deadline-expired', handleDeadlineExpired);
       window.removeEventListener('study-task-completed', handleTaskCompleted);
+      window.removeEventListener('study-late-countdown', handleLateCountdown);
+      window.removeEventListener('study-late-reset', handleLateReset);
       if (isHovered) stopPurrAudio();
       
       starGeometry.dispose();
@@ -720,7 +798,7 @@ export default function SpaceBackground() {
       catchlightMat.dispose();
       whiskerMat.dispose();
     };
-  }, []);
+  }, [lateTimeStr]);
 
   return (
     <>
@@ -739,8 +817,60 @@ export default function SpaceBackground() {
         }
       `}</style>
 
+      {/* Sad Headache Late Thought Cloud bubble (Updates counter dynamically!) */}
+      {lateTimeStr && (
+        <div className="thought-cloud-bubble" style={{
+          position: 'fixed',
+          top: 'calc(50% - 210px)',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: '#fff',
+          border: '4px solid #ff003c',
+          borderRadius: '45px',
+          padding: '16px 28px',
+          color: '#0e1320',
+          fontWeight: 900,
+          fontSize: '1.15rem',
+          fontFamily: 'var(--font-display)',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'column',
+          pointerEvents: 'none'
+        }}>
+          <div style={{ textAlign: 'center', letterSpacing: '0.5px', lineHeight: '1.4' }}>
+            😭 my nigga you are <span style={{ color: '#ff003c' }}>{lateTimeStr.replace('LATE 🚨', '')}</span> late... get better nigga T-T 💔
+          </div>
+          <div style={{
+            position: 'absolute',
+            bottom: '-16px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: '22px',
+            height: '22px',
+            background: '#fff',
+            border: '4px solid #ff003c',
+            borderRadius: '50%',
+            boxShadow: '0 4px 10px rgba(255, 0, 60, 0.2)'
+          }} />
+          <div style={{
+            position: 'absolute',
+            bottom: '-32px',
+            left: '46%',
+            transform: 'translateX(-50%)',
+            width: '12px',
+            height: '12px',
+            background: '#fff',
+            border: '4px solid #ff003c',
+            borderRadius: '50%',
+            boxShadow: '0 4px 10px rgba(255, 0, 60, 0.2)'
+          }} />
+        </div>
+      )}
+
       {/* Real-time cloudy thought bubble absolute positioned directly above center rabbit */}
-      {showCloud && (
+      {showCloud && !lateTimeStr && (
         <div className="thought-cloud-bubble" style={{
           position: 'fixed',
           top: 'calc(50% - 210px)',

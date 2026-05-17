@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { 
   History as HistoryIcon, CheckCircle2, FileText, 
-  Brain, Smartphone, Calendar, Search, Trash2
+  Brain, Smartphone, Calendar, Search, Trash2, AlertCircle
 } from 'lucide-react';
 
 export default function History({ tasks, notes, plans }) {
@@ -43,6 +43,20 @@ export default function History({ tasks, notes, plans }) {
         details: 'You checked off this task and successfully mastered this exam topic!',
         color: 'var(--neon-emerald)',
         icon: <CheckCircle2 size={16} />
+      });
+    });
+
+    // 1.5. Overdue / Missed Tasks History
+    tasks.filter(t => !t.completed && new Date(t.deadline) < new Date()).forEach(task => {
+      activities.push({
+        id: `task-miss-${task.id}`,
+        type: 'task-miss',
+        title: `Deadline Missed: ${task.title}`,
+        subtitle: `Subject: ${task.subject || 'General'}`,
+        timestamp: task.deadline,
+        details: 'You missed this study task deadline! Time to focus up and catch up!',
+        color: 'var(--neon-pink)',
+        icon: <AlertCircle size={16} />
       });
     });
 
