@@ -10,7 +10,7 @@ import History from './components/History';
 import SpaceBackground from './components/SpaceBackground';
 import { 
   BookOpen, Clock, Brain, Settings as SettingsIcon, 
-  LogOut, Shield, User, History as HistoryIcon
+  LogOut, Shield, User, History as HistoryIcon, Smartphone
 } from 'lucide-react';
 import { playChime } from './utils/sound';
 
@@ -21,6 +21,40 @@ function MainAppContent() {
   const [notes, setNotes] = useState([]);
   const [plans, setPlans] = useState([]);
   const [loadingData, setLoadingData] = useState(false);
+  
+  // PWA installation states
+  const [deferredPrompt, setDeferredPrompt] = useState(null);
+  const [showInstallBtn, setShowInstallBtn] = useState(true);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+      setShowInstallBtn(true);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      setShowInstallBtn(false);
+    }
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
+
+  const handleInstallApp = async () => {
+    if (deferredPrompt) {
+      deferredPrompt.prompt();
+      const { outcome } = await deferredPrompt.userChoice;
+      console.log('User PWA installation outcome:', outcome);
+      setDeferredPrompt(null);
+      setShowInstallBtn(false);
+    } else {
+      alert("📲 To install StudyHub AI:\n\n• On Desktop (Chrome/Edge): Click the Install icon in the right side of your URL address bar!\n• On Mobile (iOS Safari): Tap 'Share' (square-arrow icon) then tap 'Add to Home Screen'!\n• On Mobile (Android): Tap the three dots menu in Chrome and choose 'Install App'!");
+    }
+  };
 
   // Sync / refresh all application states
   const refreshData = async () => {
@@ -199,6 +233,40 @@ function MainAppContent() {
 
         {/* Profile and Settings controls */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginLeft: '24px' }}>
+          {showInstallBtn && (
+            <button 
+              onClick={handleInstallApp}
+              className="glow-cyan"
+              style={{
+                background: 'rgba(0, 242, 254, 0.08)',
+                border: '1px solid var(--neon-cyan)',
+                color: 'var(--neon-cyan)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+                padding: '6px 14px',
+                borderRadius: '16px',
+                fontSize: '0.8rem',
+                fontWeight: 700,
+                transition: 'var(--transition-smooth)',
+                boxShadow: '0 0 10px rgba(0, 242, 254, 0.15)'
+              }}
+              onMouseEnter={e => {
+                e.currentTarget.style.background = 'rgba(0, 242, 254, 0.18)';
+                e.currentTarget.style.boxShadow = '0 0 15px rgba(0, 242, 254, 0.4)';
+              }}
+              onMouseLeave={e => {
+                e.currentTarget.style.background = 'rgba(0, 242, 254, 0.08)';
+                e.currentTarget.style.boxShadow = '0 0 10px rgba(0, 242, 254, 0.15)';
+              }}
+              title="Install StudyHub AI App"
+            >
+              <Smartphone size={14} />
+              <span>Get App</span>
+            </button>
+          )}
+
           <button 
             onClick={() => handleTabChange('settings')}
             style={{
