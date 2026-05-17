@@ -4,7 +4,12 @@ import { fileURLToPath } from 'url';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const DB_FILE = path.join(__dirname, 'data.json');
+
+// In production Render environment, use the mounted persistent disk path.
+// Otherwise, fall back to the local backend directory.
+const DB_FILE = process.env.RENDER
+  ? '/opt/db/data.json'
+  : path.join(__dirname, 'data.json');
 
 // Initialize database file if it doesn't exist
 function initDb() {
