@@ -69,6 +69,12 @@ export default function Tasks({ tasks, refreshData }) {
       });
       if (res.ok) {
         playChime();
+        
+        // Dispatch custom victory event to make the 3D rabbit super happy and dance!
+        if (!task.completed) {
+          window.dispatchEvent(new CustomEvent('study-task-completed'));
+        }
+        
         refreshData();
       }
     } catch (e) {

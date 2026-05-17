@@ -6,7 +6,6 @@ import {
 } from 'lucide-react';
 
 export default function History({ tasks, notes, plans }) {
-  const { authFetch } = useState([]);
   const { authFetch: apiFetch } = useAuth();
   const [smsLogs, setSmsLogs] = useState([]);
   const [filterType, setFilterType] = useState('all');

@@ -4,6 +4,7 @@ import * as THREE from 'three';
 export default function SpaceBackground() {
   const containerRef = useRef(null);
   const [showCloud, setShowCloud] = useState(false);
+  const [showVictoryCloud, setShowVictoryCloud] = useState(false);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -243,6 +244,7 @@ export default function SpaceBackground() {
     let mouseY = 0;
     let excitedTicks = 0;
     let angryTicks = 0;
+    let danceTicks = 0;
     let eyeBlinkTimer = 0;
     let isHovered = false;
 
@@ -285,7 +287,7 @@ export default function SpaceBackground() {
         lfoOsc.connect(lfoGain);
         lfoGain.connect(purrOsc.frequency);
 
-        // High soft harmonic hum (220Hz) to represent loving cat breathing & make it perfectly audible
+        // High soft harmonic hum (220Hz) to represent loving cat breathing
         harmonicOsc = audioCtx.createOscillator();
         harmonicOsc.type = 'sine';
         harmonicOsc.frequency.setValueAtTime(220, audioCtx.currentTime);
@@ -364,7 +366,7 @@ export default function SpaceBackground() {
         osc.start();
         osc.stop(audioCtx.currentTime + 0.65);
 
-        // Rapid second vibration meow-growl
+        // Rapid second meow growl
         setTimeout(() => {
           try {
             const osc2 = audioCtx.createOscillator();
@@ -389,6 +391,56 @@ export default function SpaceBackground() {
       }
     };
 
+    // Synthesize a beautiful, high-pitched sweet meow chime for victory!
+    const playHappyChirp = () => {
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+
+        const osc = audioCtx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(320, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(780, audioCtx.currentTime + 0.35);
+
+        const gainNode = audioCtx.createGain();
+        gainNode.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.35);
+
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.35);
+
+        // Secondary delayed sweet chirp harmonic
+        setTimeout(() => {
+          try {
+            const osc2 = audioCtx.createOscillator();
+            osc2.type = 'sine';
+            osc2.frequency.setValueAtTime(450, audioCtx.currentTime);
+            osc2.frequency.exponentialRampToValueAtTime(980, audioCtx.currentTime + 0.3);
+
+            const gain2 = audioCtx.createGain();
+            gain2.gain.setValueAtTime(0.1, audioCtx.currentTime);
+            gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+
+            osc2.connect(gain2);
+            gain2.connect(audioCtx.destination);
+
+            osc2.start();
+            osc2.stop(audioCtx.currentTime + 0.3);
+          } catch (e) {}
+        }, 120);
+
+      } catch (err) {
+        console.warn("Happy chirp failed:", err);
+      }
+    };
+
     const handleMouseMove = (e) => {
       mouseX = (e.clientX - window.innerWidth / 2) / (window.innerWidth / 2);
       mouseY = -(e.clientY - window.innerHeight / 2) / (window.innerHeight / 2);
@@ -399,7 +451,7 @@ export default function SpaceBackground() {
 
     // Click triggers excited jump ONLY if clicking DIRECTLY on the bunny
     const handleScreenClick = () => {
-      if (isHovered && excitedTicks === 0 && angryTicks === 0) {
+      if (isHovered && excitedTicks === 0 && angryTicks === 0 && danceTicks === 0) {
         excitedTicks = 75;
       }
       if (audioCtx && audioCtx.state === 'suspended') {
@@ -409,20 +461,38 @@ export default function SpaceBackground() {
 
     // Trigger tab-transition backflip!
     const handleSectionChanged = () => {
-      if (excitedTicks === 0 && angryTicks === 0) {
-        excitedTicks = 75; // Jump mathematically upright!
+      if (excitedTicks === 0 && angryTicks === 0 && danceTicks === 0) {
+        excitedTicks = 75;
       }
     };
 
     // Trigger Angry Alert & speech bubble when a deadline is reached!
     const handleDeadlineExpired = () => {
-      angryTicks = 420; // ~7 seconds of quivering rage!
+      // Clear victory states if running
+      danceTicks = 0;
+      setShowVictoryCloud(false);
+
+      angryTicks = 420;
       setShowCloud(true);
       playAngryNoise();
       
-      // Auto-hide the thought cloud when the alert finishes
       setTimeout(() => {
         setShowCloud(false);
+      }, 7000);
+    };
+
+    // Trigger Victory Dance State when a task is completed!
+    const handleTaskCompleted = () => {
+      // Clear anger states if running
+      angryTicks = 0;
+      setShowCloud(false);
+
+      danceTicks = 420; // 7 seconds of high-energy dancing joy!
+      setShowVictoryCloud(true);
+      playHappyChirp();
+
+      setTimeout(() => {
+        setShowVictoryCloud(false);
       }, 7000);
     };
 
@@ -430,6 +500,7 @@ export default function SpaceBackground() {
     window.addEventListener('click', handleScreenClick);
     window.addEventListener('studyhub-section-changed', handleSectionChanged);
     window.addEventListener('study-deadline-expired', handleDeadlineExpired);
+    window.addEventListener('study-task-completed', handleTaskCompleted);
 
     // --- ANIMATION LOOP ---
     let animationFrameId;
@@ -440,7 +511,7 @@ export default function SpaceBackground() {
       // Raycasting checking solid white meshes only
       raycaster.setFromCamera(mouseVector, camera);
       const intersects = raycaster.intersectObjects(solidMeshes, false);
-      const currentlyHovered = intersects.length > 0 && angryTicks === 0;
+      const currentlyHovered = intersects.length > 0 && angryTicks === 0 && danceTicks === 0;
 
       // Handle hover audio triggers
       if (currentlyHovered && !isHovered) {
@@ -464,34 +535,64 @@ export default function SpaceBackground() {
       const breathe = Math.sin(time * 0.0016) * 0.015;
       body.position.y = -0.32 + breathe;
 
-      // ANIMATIONS ACCORDING TO STATE (Angry > Hovered > Excited > Peaceful)
+      // ANIMATIONS ACCORDING TO STATE (Angry > Dance/Happy > Hovered > Excited > Peaceful)
       if (angryTicks > 0) {
         angryTicks--;
 
-        // A. Turn eyes glowing vibrant neon red!
-        leftEye.material.color.setHex(0xff003c);
+        leftEye.material.color.setHex(0xff003c); // Neon Red eyes
         rightEye.material.color.setHex(0xff003c);
 
-        // B. Aggressive flat angry ear tilt!
-        leftEar.rotation.x = 0.8;
+        leftEar.rotation.x = 0.8; // Aggressive floppy ear stance
         rightEar.rotation.x = 0.8;
         leftEar.rotation.z = 0.55;
         rightEar.rotation.z = -0.55;
 
-        // C. Rapid head shaking (quivering in rage alert!)
+        // Rapid shaking quivering
         headGroup.rotation.y = Math.sin(time * 0.06) * 0.09;
         headGroup.rotation.x = 0.12 + Math.sin(time * 0.045) * 0.04;
         headGroup.rotation.z = 0;
 
-        // Fast angry breathing
         const fastBreathe = Math.sin(time * 0.008) * 0.024;
         body.position.y = -0.32 + fastBreathe;
         headGroup.position.y = 0.06 + fastBreathe * 1.5;
 
-        // Reset elements when anger terminates
         if (angryTicks === 0) {
-          leftEye.material.color.setHex(0x080808); // Reset to glossy obsidian
+          leftEye.material.color.setHex(0x080808); // Reset to obsidian
           rightEye.material.color.setHex(0x080808);
+          leftEar.rotation.x = 0;
+          rightEar.rotation.x = 0;
+          leftEar.rotation.z = 0.22;
+          rightEar.rotation.z = -0.22;
+          headGroup.rotation.set(0, 0, 0);
+        }
+      } else if (danceTicks > 0) {
+        danceTicks--;
+
+        leftEye.material.color.setHex(0x00ff87); // Glowing neon emerald eyes!
+        rightEye.material.color.setHex(0x00ff87);
+
+        // A. Spin the entire rabbit Group in absolute joy!
+        rabbitGroup.rotation.y = time * 0.008;
+
+        // B. Bouncing up and down high-energy dance!
+        const danceBreathe = Math.sin(time * 0.012) * 0.14;
+        rabbitGroup.position.y = -0.4 + Math.abs(danceBreathe);
+
+        // C. Joyful rapid ear waving droops
+        leftEar.rotation.z = 0.22 + Math.sin(time * 0.035) * 0.35;
+        rightEar.rotation.z = -0.22 - Math.sin(time * 0.035) * 0.35;
+        leftEar.rotation.x = Math.sin(time * 0.03) * 0.3;
+        rightEar.rotation.x = Math.cos(time * 0.03) * 0.3;
+
+        // Sweet head bobbing
+        headGroup.rotation.y = Math.sin(time * 0.01) * 0.12;
+        headGroup.rotation.x = -0.06 + Math.sin(time * 0.02) * 0.05;
+
+        if (danceTicks === 0) {
+          leftEye.material.color.setHex(0x080808); // Reset elements to standard
+          rightEye.material.color.setHex(0x080808);
+          rabbitGroup.rotation.set(0, 0, 0);
+          rabbitGroup.position.y = -0.4;
           leftEar.rotation.x = 0;
           rightEar.rotation.x = 0;
           leftEar.rotation.z = 0.22;
@@ -503,12 +604,10 @@ export default function SpaceBackground() {
         leftEye.scale.y = 0.05;
         rightEye.scale.y = 0.05;
 
-        // Shake head slowly (left to right sin-wave + loving tilt)
-        headGroup.rotation.y = Math.sin(time * 0.0035) * 0.16; // Slow head shake
-        headGroup.rotation.x = -0.04 + Math.sin(time * 0.002) * 0.03; // Gentle loving nod
-        headGroup.rotation.z = Math.sin(time * 0.002) * 0.04; // Gentle tilt
+        headGroup.rotation.y = Math.sin(time * 0.0035) * 0.16;
+        headGroup.rotation.x = -0.04 + Math.sin(time * 0.002) * 0.03;
+        headGroup.rotation.z = Math.sin(time * 0.002) * 0.04;
 
-        // Loving floppy ear droops
         leftEar.rotation.z = 0.32 + Math.sin(time * 0.002) * 0.03;
         rightEar.rotation.z = -0.32 - Math.sin(time * 0.002) * 0.03;
         
@@ -521,7 +620,6 @@ export default function SpaceBackground() {
         leftEye.scale.y = 1;
         rightEye.scale.y = 1;
 
-        // Progress based rotation (Mathematically guarantees bunny returns upright at exactly 0!)
         const progress = (75 - excitedTicks) / 75;
         rabbitGroup.rotation.x = progress * Math.PI * 2;
         rabbitGroup.position.y = -0.4 + Math.sin(progress * Math.PI) * 0.35;
@@ -540,7 +638,6 @@ export default function SpaceBackground() {
         leftEye.scale.y = 1;
         rightEye.scale.y = 1;
 
-        // Project cursor coordinates into 3D target looking vector
         const mouse3D = new THREE.Vector3(
           mouseX * 1.8, 
           mouseY * 1.2, 
@@ -602,6 +699,7 @@ export default function SpaceBackground() {
       window.removeEventListener('resize', handleResize);
       window.removeEventListener('studyhub-section-changed', handleSectionChanged);
       window.removeEventListener('study-deadline-expired', handleDeadlineExpired);
+      window.removeEventListener('study-task-completed', handleTaskCompleted);
       if (isHovered) stopPurrAudio();
       
       starGeometry.dispose();
@@ -635,6 +733,10 @@ export default function SpaceBackground() {
           animation: bounceCloud 2.4s infinite ease-in-out;
           box-shadow: 0 0 30px rgba(255, 0, 60, 0.55), inset 0 0 15px rgba(255, 0, 60, 0.1);
         }
+        .victory-cloud-bubble {
+          animation: bounceCloud 2.4s infinite ease-in-out;
+          box-shadow: 0 0 30px rgba(0, 255, 135, 0.55), inset 0 0 15px rgba(0, 255, 135, 0.1);
+        }
       `}</style>
 
       {/* Real-time cloudy thought bubble absolute positioned directly above center rabbit */}
@@ -659,12 +761,9 @@ export default function SpaceBackground() {
           flexDirection: 'column',
           pointerEvents: 'none'
         }}>
-          {/* Main message */}
           <div style={{ textAlign: 'center', letterSpacing: '0.5px' }}>
             ⚠️ DEADLINE HITS...NIGGA! 🚨
           </div>
-
-          {/* Baby cloud thought bubbles floating down */}
           <div style={{
             position: 'absolute',
             bottom: '-16px',
@@ -688,6 +787,58 @@ export default function SpaceBackground() {
             border: '4px solid #ff003c',
             borderRadius: '50%',
             boxShadow: '0 4px 10px rgba(255, 0, 60, 0.2)'
+          }} />
+        </div>
+      )}
+
+      {/* Real-time Task Completed Victory thought bubble overlay */}
+      {showVictoryCloud && (
+        <div className="victory-cloud-bubble" style={{
+          position: 'fixed',
+          top: 'calc(50% - 210px)',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: '#fff',
+          border: '4px solid #00ff87',
+          borderRadius: '45px',
+          padding: '18px 30px',
+          color: '#0e1320',
+          fontWeight: 900,
+          fontSize: '1.15rem',
+          fontFamily: 'var(--font-display)',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'column',
+          pointerEvents: 'none'
+        }}>
+          <div style={{ textAlign: 'center', letterSpacing: '0.5px', lineHeight: '1.4' }}>
+            🎉 well done my nigga...i belive in you &lt;3 💖
+          </div>
+          <div style={{
+            position: 'absolute',
+            bottom: '-16px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: '22px',
+            height: '22px',
+            background: '#fff',
+            border: '4px solid #00ff87',
+            borderRadius: '50%',
+            boxShadow: '0 4px 10px rgba(0, 255, 135, 0.2)'
+          }} />
+          <div style={{
+            position: 'absolute',
+            bottom: '-32px',
+            left: '46%',
+            transform: 'translateX(-50%)',
+            width: '12px',
+            height: '12px',
+            background: '#fff',
+            border: '4px solid #00ff87',
+            borderRadius: '50%',
+            boxShadow: '0 4px 10px rgba(0, 255, 135, 0.2)'
           }} />
         </div>
       )}
