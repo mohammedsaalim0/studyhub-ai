@@ -1,8 +1,9 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import * as THREE from 'three';
 
 export default function SpaceBackground() {
   const containerRef = useRef(null);
+  const [showCloud, setShowCloud] = useState(false);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -231,23 +232,24 @@ export default function SpaceBackground() {
     rabbitGroup.position.set(0, -0.4, 0.4);
     scene.add(rabbitGroup);
 
-    // --- SOLID WHITE MESHES FOR RAYCASTING (Strictly ignores whiskers/glints!) ---
+    // --- SOLID WHITE MESHES FOR RAYCASTING ---
     const solidMeshes = [body, head, leftEar, rightEar, leftPaw, rightPaw];
 
-    // --- INTERACTIVE RAYCASTING, HOVER & SYNTHESIZED PURR AUDIO ---
+    // --- INTERACTIVE RAYCASTING, HOVER & AUDIO SYSTEMS ---
     const raycaster = new THREE.Raycaster();
     const mouseVector = new THREE.Vector2();
 
     let mouseX = 0;
     let mouseY = 0;
     let excitedTicks = 0;
+    let angryTicks = 0;
     let eyeBlinkTimer = 0;
     let isHovered = false;
 
     // Smooth 3D look-at target vector
     const targetLookAt = new THREE.Vector3(0, 0, 1.5);
 
-    // Web Audio purr synthesis
+    // Web Audio purr & alarm synthesizer
     let audioCtx = null;
     let purrOsc = null;
     let lfoOsc = null;
@@ -263,29 +265,27 @@ export default function SpaceBackground() {
         if (!audioCtx) {
           audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         }
-        
-        // Auto-resume context to bypass browser policies
         if (audioCtx.state === 'suspended') {
           audioCtx.resume();
         }
 
-        // 1. Fundamental Low Purr Hum (Set to 85Hz for absolute laptop speaker auditability!)
+        // Fundamental Low Purr Hum (Set to 85Hz for absolute laptop speaker auditability!)
         purrOsc = audioCtx.createOscillator();
         purrOsc.type = 'triangle';
         purrOsc.frequency.setValueAtTime(85, audioCtx.currentTime);
 
-        // Low-Frequency modulation LFO (4.6Hz) to create vibrating purring rhythm
+        // Modulator LFO (4.6Hz) to create vibrating purring rhythm
         lfoOsc = audioCtx.createOscillator();
         lfoOsc.type = 'sine';
         lfoOsc.frequency.setValueAtTime(4.6, audioCtx.currentTime);
 
         const lfoGain = audioCtx.createGain();
-        lfoGain.gain.setValueAtTime(12, audioCtx.currentTime); // Modulate by 12Hz
+        lfoGain.gain.setValueAtTime(12, audioCtx.currentTime);
 
         lfoOsc.connect(lfoGain);
         lfoGain.connect(purrOsc.frequency);
 
-        // 2. High soft harmonic hum (220Hz) to represent loving cat breathing & make it perfectly audible on phone/laptops!
+        // High soft harmonic hum (220Hz) to represent loving cat breathing & make it perfectly audible
         harmonicOsc = audioCtx.createOscillator();
         harmonicOsc.type = 'sine';
         harmonicOsc.frequency.setValueAtTime(220, audioCtx.currentTime);
@@ -296,14 +296,14 @@ export default function SpaceBackground() {
         harmonicLfoGain.connect(harmonicOsc.frequency);
 
         const harmonicVolume = audioCtx.createGain();
-        harmonicVolume.gain.setValueAtTime(0.015, audioCtx.currentTime); // Soft background hum
+        harmonicVolume.gain.setValueAtTime(0.015, audioCtx.currentTime);
 
         harmonicOsc.connect(harmonicVolume);
 
         // Main output volume gain fade-in
         purrGain = audioCtx.createGain();
         purrGain.gain.setValueAtTime(0, audioCtx.currentTime);
-        purrGain.gain.linearRampToValueAtTime(0.18, audioCtx.currentTime + 0.3); // Smooth fade in
+        purrGain.gain.linearRampToValueAtTime(0.18, audioCtx.currentTime + 0.3);
 
         purrOsc.connect(purrGain);
         harmonicVolume.connect(purrGain);
@@ -324,7 +324,7 @@ export default function SpaceBackground() {
     const stopPurrAudio = () => {
       if (purrGain && audioCtx) {
         try {
-          purrGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.25); // Smooth fade out
+          purrGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.25);
           const p = activePurr;
           const l = activeLfo;
           const h = activeHarmonic;
@@ -339,6 +339,56 @@ export default function SpaceBackground() {
       }
     };
 
+    // Synthesize a grumpy pitch-dropping warning meow buzzer sound natively!
+    const playAngryNoise = () => {
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+
+        const osc = audioCtx.createOscillator();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(240, audioCtx.currentTime);
+        osc.frequency.exponentialRampToValueAtTime(55, audioCtx.currentTime + 0.65);
+
+        const gainNode = audioCtx.createGain();
+        gainNode.gain.setValueAtTime(0.2, audioCtx.currentTime);
+        gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.65);
+
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        osc.start();
+        osc.stop(audioCtx.currentTime + 0.65);
+
+        // Rapid second vibration meow-growl
+        setTimeout(() => {
+          try {
+            const osc2 = audioCtx.createOscillator();
+            osc2.type = 'sawtooth';
+            osc2.frequency.setValueAtTime(180, audioCtx.currentTime);
+            osc2.frequency.exponentialRampToValueAtTime(45, audioCtx.currentTime + 0.5);
+
+            const gain2 = audioCtx.createGain();
+            gain2.gain.setValueAtTime(0.18, audioCtx.currentTime);
+            gain2.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.5);
+
+            osc2.connect(gain2);
+            gain2.connect(audioCtx.destination);
+
+            osc2.start();
+            osc2.stop(audioCtx.currentTime + 0.5);
+          } catch (e) {}
+        }, 220);
+
+      } catch (err) {
+        console.warn("Angry sound failed:", err);
+      }
+    };
+
     const handleMouseMove = (e) => {
       mouseX = (e.clientX - window.innerWidth / 2) / (window.innerWidth / 2);
       mouseY = -(e.clientY - window.innerHeight / 2) / (window.innerHeight / 2);
@@ -347,20 +397,39 @@ export default function SpaceBackground() {
       mouseVector.y = -(e.clientY / window.innerHeight) * 2 + 1;
     };
 
-    // Click triggers excited jump ONLY if clicking DIRECTLY on the bunny meshes (stops tab menu issues!)
+    // Click triggers excited jump ONLY if clicking DIRECTLY on the bunny
     const handleScreenClick = () => {
-      if (isHovered && excitedTicks === 0) {
+      if (isHovered && excitedTicks === 0 && angryTicks === 0) {
         excitedTicks = 75;
       }
-      
-      // Auto-resume audio on any click interaction
       if (audioCtx && audioCtx.state === 'suspended') {
         audioCtx.resume();
       }
     };
 
+    // Trigger tab-transition backflip!
+    const handleSectionChanged = () => {
+      if (excitedTicks === 0 && angryTicks === 0) {
+        excitedTicks = 75; // Jump mathematically upright!
+      }
+    };
+
+    // Trigger Angry Alert & speech bubble when a deadline is reached!
+    const handleDeadlineExpired = () => {
+      angryTicks = 420; // ~7 seconds of quivering rage!
+      setShowCloud(true);
+      playAngryNoise();
+      
+      // Auto-hide the thought cloud when the alert finishes
+      setTimeout(() => {
+        setShowCloud(false);
+      }, 7000);
+    };
+
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('click', handleScreenClick);
+    window.addEventListener('studyhub-section-changed', handleSectionChanged);
+    window.addEventListener('study-deadline-expired', handleDeadlineExpired);
 
     // --- ANIMATION LOOP ---
     let animationFrameId;
@@ -368,12 +437,12 @@ export default function SpaceBackground() {
     const animate = (time) => {
       animationFrameId = requestAnimationFrame(animate);
 
-      // 1. Raycaster checking solid white meshes only (prevents whiskers triggering false hover!)
+      // Raycasting checking solid white meshes only
       raycaster.setFromCamera(mouseVector, camera);
       const intersects = raycaster.intersectObjects(solidMeshes, false);
-      const currentlyHovered = intersects.length > 0;
+      const currentlyHovered = intersects.length > 0 && angryTicks === 0;
 
-      // Handle hover audio triggers and state transitions
+      // Handle hover audio triggers
       if (currentlyHovered && !isHovered) {
         isHovered = true;
         startPurrAudio();
@@ -382,22 +451,55 @@ export default function SpaceBackground() {
         stopPurrAudio();
       }
 
-      // 2. Background stellar rotation
+      // Background stellar rotation
       starField.rotation.y = time * 0.000003;
       starField.rotation.x = time * 0.000001;
 
-      // 3. Camera breathing glide
+      // Camera breathing glide
       camera.position.x += (mouseX * 0.2 - camera.position.x) * 0.006;
       camera.position.y += (mouseY * 0.2 - camera.position.y) * 0.006;
       camera.lookAt(scene.position);
 
-      // 4. Base breathing movement
+      // Base breathing movement
       const breathe = Math.sin(time * 0.0016) * 0.015;
       body.position.y = -0.32 + breathe;
 
-      // 5. ANIMATIONS ACCORDING TO HOVER / CLICKS / EMOTIONS
-      if (isHovered) {
-        // --- HOVER PETTING MODE (Closed eyes + loving cat head shake) ---
+      // ANIMATIONS ACCORDING TO STATE (Angry > Hovered > Excited > Peaceful)
+      if (angryTicks > 0) {
+        angryTicks--;
+
+        // A. Turn eyes glowing vibrant neon red!
+        leftEye.material.color.setHex(0xff003c);
+        rightEye.material.color.setHex(0xff003c);
+
+        // B. Aggressive flat angry ear tilt!
+        leftEar.rotation.x = 0.8;
+        rightEar.rotation.x = 0.8;
+        leftEar.rotation.z = 0.55;
+        rightEar.rotation.z = -0.55;
+
+        // C. Rapid head shaking (quivering in rage alert!)
+        headGroup.rotation.y = Math.sin(time * 0.06) * 0.09;
+        headGroup.rotation.x = 0.12 + Math.sin(time * 0.045) * 0.04;
+        headGroup.rotation.z = 0;
+
+        // Fast angry breathing
+        const fastBreathe = Math.sin(time * 0.008) * 0.024;
+        body.position.y = -0.32 + fastBreathe;
+        headGroup.position.y = 0.06 + fastBreathe * 1.5;
+
+        // Reset elements when anger terminates
+        if (angryTicks === 0) {
+          leftEye.material.color.setHex(0x080808); // Reset to glossy obsidian
+          rightEye.material.color.setHex(0x080808);
+          leftEar.rotation.x = 0;
+          rightEar.rotation.x = 0;
+          leftEar.rotation.z = 0.22;
+          rightEar.rotation.z = -0.22;
+          headGroup.rotation.set(0, 0, 0);
+        }
+      } else if (isHovered) {
+        // --- HOVER PETTING MODE ---
         leftEye.scale.y = 0.05;
         rightEye.scale.y = 0.05;
 
@@ -410,7 +512,6 @@ export default function SpaceBackground() {
         leftEar.rotation.z = 0.32 + Math.sin(time * 0.002) * 0.03;
         rightEar.rotation.z = -0.32 - Math.sin(time * 0.002) * 0.03;
         
-        // Twitch nose quickly (sniffing contentedly!)
         nose.position.y = -0.015 + Math.sin(time * 0.02) * 0.003;
         headGroup.position.y = 0.06 + breathe * 0.8;
       } else if (excitedTicks > 0) {
@@ -499,6 +600,8 @@ export default function SpaceBackground() {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('click', handleScreenClick);
       window.removeEventListener('resize', handleResize);
+      window.removeEventListener('studyhub-section-changed', handleSectionChanged);
+      window.removeEventListener('study-deadline-expired', handleDeadlineExpired);
       if (isHovered) stopPurrAudio();
       
       starGeometry.dispose();
@@ -522,18 +625,86 @@ export default function SpaceBackground() {
   }, []);
 
   return (
-    <canvas 
-      ref={containerRef} 
-      style={{
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        width: '100vw',
-        height: '100vh',
-        zIndex: -1,
-        pointerEvents: 'auto', // MUST be auto so we can hover and click it directly!
-        background: 'transparent'
-      }}
-    />
+    <>
+      <style>{`
+        @keyframes bounceCloud {
+          0%, 100% { transform: translate(-50%, 0) scale(1); }
+          50% { transform: translate(-50%, -10px) scale(1.03); }
+        }
+        .thought-cloud-bubble {
+          animation: bounceCloud 2.4s infinite ease-in-out;
+          box-shadow: 0 0 30px rgba(255, 0, 60, 0.55), inset 0 0 15px rgba(255, 0, 60, 0.1);
+        }
+      `}</style>
+
+      {/* Real-time cloudy thought bubble absolute positioned directly above center rabbit */}
+      {showCloud && (
+        <div className="thought-cloud-bubble" style={{
+          position: 'fixed',
+          top: 'calc(50% - 210px)',
+          left: '50%',
+          transform: 'translateX(-50%)',
+          background: '#fff',
+          border: '4px solid #ff003c',
+          borderRadius: '45px',
+          padding: '16px 28px',
+          color: '#0e1320',
+          fontWeight: 900,
+          fontSize: '1.15rem',
+          fontFamily: 'var(--font-display)',
+          zIndex: 9999,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          flexDirection: 'column',
+          pointerEvents: 'none'
+        }}>
+          {/* Main message */}
+          <div style={{ textAlign: 'center', letterSpacing: '0.5px' }}>
+            ⚠️ DEADLINE HITS...NIGGA! 🚨
+          </div>
+
+          {/* Baby cloud thought bubbles floating down */}
+          <div style={{
+            position: 'absolute',
+            bottom: '-16px',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            width: '22px',
+            height: '22px',
+            background: '#fff',
+            border: '4px solid #ff003c',
+            borderRadius: '50%',
+            boxShadow: '0 4px 10px rgba(255, 0, 60, 0.2)'
+          }} />
+          <div style={{
+            position: 'absolute',
+            bottom: '-32px',
+            left: '46%',
+            transform: 'translateX(-50%)',
+            width: '12px',
+            height: '12px',
+            background: '#fff',
+            border: '4px solid #ff003c',
+            borderRadius: '50%',
+            boxShadow: '0 4px 10px rgba(255, 0, 60, 0.2)'
+          }} />
+        </div>
+      )}
+
+      <canvas 
+        ref={containerRef} 
+        style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          width: '100vw',
+          height: '100vh',
+          zIndex: -1,
+          pointerEvents: 'auto',
+          background: 'transparent'
+        }}
+      />
+    </>
   );
 }

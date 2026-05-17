@@ -66,6 +66,9 @@ export default function Dashboard({ setActiveTab, tasks, notes, plans, refreshDa
         // Trigger Sound Alarm!
         playAlarm();
         
+        // Dispatch custom event to notify the 3D rabbit background instantly!
+        window.dispatchEvent(new CustomEvent('study-deadline-expired'));
+        
         // Push visual notification
         if (!activeAlerts.includes(nextTask.id)) {
           setActiveAlerts(prev => [...prev, nextTask.id]);

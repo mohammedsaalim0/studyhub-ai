@@ -102,6 +102,9 @@ function MainAppContent() {
   const handleTabChange = (tab) => {
     setActiveTab(tab);
     playChime();
+    
+    // Dispatch section change event so the 3D rabbit background triggers a safe jump!
+    window.dispatchEvent(new CustomEvent('studyhub-section-changed'));
   };
 
   return (
