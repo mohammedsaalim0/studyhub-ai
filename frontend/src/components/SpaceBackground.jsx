@@ -28,7 +28,7 @@ export default function SpaceBackground() {
     renderer.setSize(window.innerWidth, window.innerHeight);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-    // --- LIGHTS (Crucial for realistic fluffy bunny shading!) ---
+    // --- LIGHTS ---
     const ambientLight = new THREE.AmbientLight(0xffffff, 0.55);
     scene.add(ambientLight);
 
@@ -81,10 +81,10 @@ export default function SpaceBackground() {
     // --- ORGANIC HIGHLY REALISTIC 3D RABBIT CREATION ---
     const rabbitGroup = new THREE.Group();
 
-    // 1. Soft Fluffy Fur Material (Velvety, high roughness, no metalness)
+    // 1. Soft Fluffy Fur Material (Velvety, high roughness)
     const furMat = new THREE.MeshStandardMaterial({
-      color: 0xfdfbf7,   // Gorgeous organic cream-white fluffy bunny color
-      roughness: 0.95,   // Soft non-reflective velvety texture (fur-like!)
+      color: 0xfdfbf7,   // Cream-white fluffy bunny color
+      roughness: 0.95,   // Soft non-reflective texture
       metalness: 0.02
     });
 
@@ -94,9 +94,9 @@ export default function SpaceBackground() {
       metalness: 0.01
     });
 
-    // A. Fluffy Chubby Body (Spheroid / egg-shaped bunny body)
+    // A. Fluffy Chubby Body
     const bodyGeo = new THREE.SphereGeometry(0.25, 32, 32);
-    bodyGeo.scale(1, 1.28, 0.95); // Elongate to represent an organic rabbit posture
+    bodyGeo.scale(1, 1.28, 0.95);
     const body = new THREE.Mesh(bodyGeo, furMat);
     body.position.y = -0.32;
     rabbitGroup.add(body);
@@ -107,12 +107,12 @@ export default function SpaceBackground() {
     tail.position.set(0, -0.48, -0.22);
     rabbitGroup.add(tail);
 
-    // C. Head Group (Central focus for mouse tracking)
+    // C. Head Group
     const headGroup = new THREE.Group();
     headGroup.position.set(0, 0.06, 0);
 
     const headGeo = new THREE.SphereGeometry(0.18, 32, 32);
-    headGeo.scale(1.05, 0.96, 1); // Cute round chubby cheeks shape
+    headGeo.scale(1.05, 0.96, 1);
     const head = new THREE.Mesh(headGeo, furMat);
     headGroup.add(head);
 
@@ -132,9 +132,9 @@ export default function SpaceBackground() {
     nose.position.set(0, -0.015, 0.178);
     headGroup.add(nose);
 
-    // F. FLOATING FLOPPY ORGANIC EARS
+    // F. FLOPPY ORGANIC EARS
     const earGeo = new THREE.SphereGeometry(0.044, 16, 16);
-    earGeo.scale(1, 4.4, 0.28); // Elongated flat floppy ear geometry
+    earGeo.scale(1, 4.4, 0.28);
 
     // Left Ear
     const leftEar = new THREE.Mesh(earGeo, furMat);
@@ -143,7 +143,6 @@ export default function SpaceBackground() {
     leftEar.rotation.y = 0.08;
     headGroup.add(leftEar);
 
-    // Left Inner Pink Ear
     const innerEarGeo = new THREE.SphereGeometry(0.026, 16, 16);
     innerEarGeo.scale(1, 3.6, 0.1);
     const leftInner = new THREE.Mesh(innerEarGeo, innerPinkMat);
@@ -157,16 +156,15 @@ export default function SpaceBackground() {
     rightEar.rotation.y = -0.08;
     headGroup.add(rightEar);
 
-    // Right Inner Pink Ear
     const rightInner = new THREE.Mesh(innerEarGeo, innerPinkMat);
     rightInner.position.set(0, 0.01, 0.022);
     rightEar.add(rightInner);
 
-    // G. HIGHLY REALISTIC GLASSY EYES WITH PUPILS & REFLECTIONS
+    // G. HIGHLY REALISTIC GLASSY EYES
     const eyeScleraGeo = new THREE.SphereGeometry(0.032, 32, 32);
     const glassyMat = new THREE.MeshStandardMaterial({
-      color: 0x080808,   // Highly polished deep obsidian-black iris
-      roughness: 0.02,   // Wet, glossy glassy finish!
+      color: 0x080808,   // Deep obsidian black
+      roughness: 0.02,   // Glossy glassy
       metalness: 0.1
     });
 
@@ -178,12 +176,12 @@ export default function SpaceBackground() {
     rightEye.position.set(0.082, 0.022, 0.135);
     headGroup.add(rightEye);
 
-    // Eye catchlights (little white shiny glints reflecting sky light!)
+    // Eye catchlights (shiny highlights)
     const catchlightGeo = new THREE.SphereGeometry(0.01, 8, 8);
     const catchlightMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
     
     const leftGlint = new THREE.Mesh(catchlightGeo, catchlightMat);
-    leftGlint.position.set(0.014, 0.014, 0.022); // Top-right offset
+    leftGlint.position.set(0.014, 0.014, 0.022);
     leftEye.add(leftGlint);
 
     const rightGlint = new THREE.Mesh(catchlightGeo, catchlightMat);
@@ -216,31 +214,102 @@ export default function SpaceBackground() {
     rw2.position.set(0.05, -0.04, 0.135);
     headGroup.add(rw2);
 
-    // Add head to base rabbit structure
+    // Add head to base rabbit
     rabbitGroup.add(headGroup);
 
-    // Position the fluffy rabbit in the dead center, floating peacefully behind text cards
+    // Position perfectly in the dead center
     rabbitGroup.position.set(0, -0.4, 0.4);
     scene.add(rabbitGroup);
 
-    // --- INTERACTION & 3D LOOK-AT TARGET TRACKING ---
+    // --- INTERACTIVE RAYCASTING, HOVER & SYNTHESIZED PURR AUDIO ---
+    const raycaster = new THREE.Raycaster();
+    const mouseVector = new THREE.Vector2();
+
     let mouseX = 0;
     let mouseY = 0;
     let excitedTicks = 0;
     let eyeBlinkTimer = 0;
-    
+    let isHovered = false;
+
     // Smooth 3D look-at target vector
     const targetLookAt = new THREE.Vector3(0, 0, 1.5);
 
-    const handleMouseMove = (e) => {
-      // Offset values scaled to follow cursor coordinates exactly
-      mouseX = (e.clientX - window.innerWidth / 2) / (window.innerWidth / 2);
-      mouseY = -(e.clientY - window.innerHeight / 2) / (window.innerHeight / 2);
+    // Web Audio purr synthesis
+    let audioCtx = null;
+    let purrOsc = null;
+    let lfoOsc = null;
+    let purrGain = null;
+
+    const startPurrAudio = () => {
+      try {
+        if (!audioCtx) {
+          audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioCtx.state === 'suspended') {
+          audioCtx.resume();
+        }
+
+        // Low warm frequency (purr sound)
+        purrOsc = audioCtx.createOscillator();
+        purrOsc.type = 'triangle';
+        purrOsc.frequency.setValueAtTime(28, audioCtx.currentTime);
+
+        // LFO to create vibrating rhythmic purr meow modulation (4.8 Hz)
+        lfoOsc = audioCtx.createOscillator();
+        lfoOsc.type = 'sine';
+        lfoOsc.frequency.setValueAtTime(4.8, audioCtx.currentTime);
+
+        const lfoGain = audioCtx.createGain();
+        lfoGain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+
+        lfoOsc.connect(lfoGain);
+        lfoGain.connect(purrOsc.frequency);
+
+        // Main output volume fade
+        purrGain = audioCtx.createGain();
+        purrGain.gain.setValueAtTime(0, audioCtx.currentTime);
+        purrGain.gain.linearRampToValueAtTime(0.18, audioCtx.currentTime + 0.35); // Smooth fade in
+
+        purrOsc.connect(purrGain);
+        purrGain.connect(audioCtx.destination);
+
+        purrOsc.start();
+        lfoOsc.start();
+      } catch (err) {
+        console.warn("AudioContext bypass active:", err);
+      }
     };
 
-    // Click triggers excited jump and wiggles!
+    const stopPurrAudio = () => {
+      if (purrGain && audioCtx) {
+        try {
+          purrGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3); // Smooth fade out
+          const currentPurr = purrOsc;
+          const currentLfo = lfoOsc;
+          setTimeout(() => {
+            try {
+              currentPurr.stop();
+              currentLfo.stop();
+            } catch (e) {}
+          }, 350);
+        } catch (e) {}
+      }
+    };
+
+    const handleMouseMove = (e) => {
+      mouseX = (e.clientX - window.innerWidth / 2) / (window.innerWidth / 2);
+      mouseY = -(e.clientY - window.innerHeight / 2) / (window.innerHeight / 2);
+
+      // Map mouse for raycasting coordinate grid (-1 to 1)
+      mouseVector.x = (e.clientX / window.innerWidth) * 2 - 1;
+      mouseVector.y = -(e.clientY / window.innerHeight) * 2 + 1;
+    };
+
+    // Click triggers excited jump
     const handleScreenClick = () => {
-      excitedTicks = 75;
+      if (!isHovered) {
+        excitedTicks = 75;
+      }
     };
 
     window.addEventListener('mousemove', handleMouseMove);
@@ -252,39 +321,62 @@ export default function SpaceBackground() {
     const animate = (time) => {
       animationFrameId = requestAnimationFrame(animate);
 
-      // 1. Ultra-slow background stellar rotation
+      // 1. Raycaster hover detection over rabbit meshes
+      raycaster.setFromCamera(mouseVector, camera);
+      const intersects = raycaster.intersectObjects(rabbitGroup.children, true);
+      const currentlyHovered = intersects.length > 0;
+
+      // Handle hover audio trigger changes
+      if (currentlyHovered && !isHovered) {
+        isHovered = true;
+        startPurrAudio();
+      } else if (!currentlyHovered && isHovered) {
+        isHovered = false;
+        stopPurrAudio();
+      }
+
+      // 2. Background stellar rotation
       starField.rotation.y = time * 0.000003;
       starField.rotation.x = time * 0.000001;
 
-      // 2. Slow breathing background camera glide
+      // 3. Camera breathing glide
       camera.position.x += (mouseX * 0.2 - camera.position.x) * 0.006;
       camera.position.y += (mouseY * 0.2 - camera.position.y) * 0.006;
       camera.lookAt(scene.position);
 
-      // 3. Gentle breathing cycles
+      // 4. Base breathing movement
       const breathe = Math.sin(time * 0.0016) * 0.015;
       body.position.y = -0.32 + breathe;
-      headGroup.position.y = 0.06 + breathe * 1.3;
 
-      // 4. Blinking cycles
-      eyeBlinkTimer += 1;
-      if (eyeBlinkTimer % 230 === 0) {
-        leftEye.scale.y = 0;
-        rightEye.scale.y = 0;
-      } else if (leftEye.scale.y === 0) {
+      // 5. ANIMATIONS ACCORDING TO HOVER / CLICKS / EMOTIONS
+      if (isHovered) {
+        // --- HOVER PETTING MODE (Closed eyes + loving cat head shake) ---
+        // A. Close eyes (scale Y to 0)
+        leftEye.scale.y = 0.05;
+        rightEye.scale.y = 0.05;
+
+        // B. Shake head slowly (left to right sin-wave + loving tilt)
+        headGroup.rotation.y = Math.sin(time * 0.0035) * 0.16; // Slow head shake
+        headGroup.rotation.x = -0.04 + Math.sin(time * 0.002) * 0.03; // Gentle loving nod
+        headGroup.rotation.z = Math.sin(time * 0.002) * 0.04; // Gentle tilt
+
+        // C. Loving floppy ear droops
+        leftEar.rotation.z = 0.32 + Math.sin(time * 0.002) * 0.03;
+        rightEar.rotation.z = -0.32 - Math.sin(time * 0.002) * 0.03;
+        
+        // Twitch nose quickly (sniffing contentedly!)
+        nose.position.y = -0.015 + Math.sin(time * 0.02) * 0.003;
+        headGroup.position.y = 0.06 + breathe * 0.8;
+      } else if (excitedTicks > 0) {
+        // --- EXCITED JUMP BACKFLIP MODE ---
+        excitedTicks--;
+        
         leftEye.scale.y = 1;
         rightEye.scale.y = 1;
-      }
 
-      // 5. EMOTIONS & MATHS 3D TARGET TRACKING
-      if (excitedTicks > 0) {
-        excitedTicks--;
-
-        // A. Excited backflip animation curves!
         rabbitGroup.rotation.x += (Math.PI * 2) / 75;
         rabbitGroup.position.y = -0.4 + Math.sin((excitedTicks / 75) * Math.PI) * 0.35;
 
-        // B. Dynamic excited ear-wiggles
         leftEar.rotation.x = Math.sin(time * 0.02) * 0.4;
         rightEar.rotation.x = Math.cos(time * 0.02) * 0.4;
         leftEar.rotation.z = 0.22 + Math.sin(time * 0.03) * 0.2;
@@ -295,30 +387,39 @@ export default function SpaceBackground() {
           rabbitGroup.position.y = -0.4;
         }
       } else {
-        // --- HAPPY MODE & 3D LOOK AT TRACKING ---
-        // Project screen cursor coordinates into a real 3D target coordinates exactly in front of head Group
+        // --- PEACEFUL LOOK AT MOUSE MODE ---
+        leftEye.scale.y = 1;
+        rightEye.scale.y = 1;
+
+        // Project cursor coordinates into 3D target looking vector
         const mouse3D = new THREE.Vector3(
           mouseX * 1.8, 
           mouseY * 1.2, 
-          1.6 // Depth offset in front of head group
+          1.6
         );
 
-        // Smoothly interpolate the target coordinates vector to remove any screen stutter
         targetLookAt.x += (mouse3D.x - targetLookAt.x) * 0.08;
         targetLookAt.y += (mouse3D.y - targetLookAt.y) * 0.08;
         targetLookAt.z += (mouse3D.z - targetLookAt.z) * 0.08;
 
-        // Make head look directly at target coordinates!
         headGroup.lookAt(targetLookAt);
 
-        // Gentle, authentic nose twitching
+        // Natural blinks
+        eyeBlinkTimer += 1;
+        if (eyeBlinkTimer % 230 === 0) {
+          leftEye.scale.y = 0;
+          rightEye.scale.y = 0;
+        }
+
+        // Gentle nose twitching
         nose.position.y = -0.015 + Math.sin(time * 0.015) * 0.003;
 
-        // Gentle, floppy ear sway
+        // Floppy ears sway
         leftEar.rotation.z = 0.22 + Math.sin(time * 0.001) * 0.04;
         rightEar.rotation.z = -0.22 - Math.cos(time * 0.001) * 0.04;
         leftEar.rotation.x = Math.sin(time * 0.0008) * 0.05;
         rightEar.rotation.x = Math.sin(time * 0.0008) * 0.05;
+        headGroup.position.y = 0.06 + breathe * 1.3;
       }
 
       renderer.render(scene, camera);
@@ -332,7 +433,6 @@ export default function SpaceBackground() {
       camera.updateProjectionMatrix();
       renderer.setSize(window.innerWidth, window.innerHeight);
 
-      // Reposition dynamically for mobile so it fits behind frosted cards beautifully
       if (window.innerWidth < 768) {
         rabbitGroup.position.set(0, -0.58, 0.4);
         rabbitGroup.scale.set(0.72, 0.72, 0.72);
@@ -351,6 +451,8 @@ export default function SpaceBackground() {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('click', handleScreenClick);
       window.removeEventListener('resize', handleResize);
+      if (isHovered) stopPurrAudio();
+      
       starGeometry.dispose();
       starMaterial.dispose();
       bodyGeo.dispose();
@@ -380,7 +482,7 @@ export default function SpaceBackground() {
         width: '100vw',
         height: '100vh',
         zIndex: -1,
-        pointerEvents: 'none',
+        pointerEvents: 'auto', // MUST be auto so we can hover and click it directly!
         background: 'transparent'
       }}
     />
