@@ -1,0 +1,48 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0e1320" />
+      <stop offset="100%" stop-color="#161f38" />
+    </linearGradient>
+    <linearGradient id="neonGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#00f2fe" />
+      <stop offset="100%" stop-color="#ff007f" />
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="12" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+  </defs>
+  
+  <!-- Outer Rounded Square Background -->
+  <rect width="512" height="512" rx="110" fill="url(#bgGrad)" stroke="#1f2937" stroke-width="4" />
+  
+  <!-- Glowing Space Circle -->
+  <circle cx="256" cy="256" r="190" fill="none" stroke="url(#neonGrad)" stroke-width="4" opacity="0.3" filter="url(#glow)" />
+  
+  <!-- Cyber Star Particles -->
+  <circle cx="160" cy="140" r="3" fill="#fff" opacity="0.8" />
+  <circle cx="360" cy="150" r="2.5" fill="#00f2fe" opacity="0.9" />
+  <circle cx="320" cy="380" r="3.5" fill="#ff007f" opacity="0.75" />
+  <circle cx="140" cy="320" r="2" fill="#fff" opacity="0.6" />
+
+  <!-- Gorgeous Abstract Cyber-Rabbit Head / Ears (Sleek minimalist vectors) -->
+  <g transform="translate(146, 110)" filter="url(#glow)">
+    <!-- Right Ear -->
+    <path d="M 140 10 C 150 -10, 160 -10, 165 40 C 170 90, 150 150, 130 150 C 110 150, 130 90, 140 10 Z" fill="url(#neonGrad)" />
+    <!-- Left Ear -->
+    <path d="M 80 10 C 70 -10, 60 -10, 55 40 C 50 90, 70 150, 90 150 C 110 150, 90 90, 80 10 Z" fill="url(#neonGrad)" />
+    <!-- Chubby Head -->
+    <ellipse cx="110" cy="190" rx="65" ry="50" fill="url(#neonGrad)" />
+    <!-- Glowing Cheeks / Muzzle -->
+    <circle cx="95" cy="205" r="16" fill="#0e1320" />
+    <circle cx="125" cy="205" r="16" fill="#0e1320" />
+    <!-- Tiny Pink/Neon Nose -->
+    <polygon points="110,200 105,192 115,192" fill="#ff007f" />
+    <!-- Sleek Neon Eyes -->
+    <ellipse cx="80" cy="180" rx="9" ry="14" fill="#0e1320" />
+    <circle cx="82" cy="176" r="3.5" fill="#00f2fe" />
+    <ellipse cx="140" cy="180" rx="9" ry="14" fill="#0e1320" />
+    <circle cx="138" cy="176" r="3.5" fill="#00f2fe" />
+  </g>
+</svg>
