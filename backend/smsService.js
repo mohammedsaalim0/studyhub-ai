@@ -19,7 +19,7 @@ export async function sendTaskSMS(user, task) {
   const authToken = twilioConfig.authToken || process.env.TWILIO_AUTH_TOKEN;
   const fromPhone = twilioConfig.fromPhone || process.env.TWILIO_FROM_PHONE;
 
-  const messageText = `📚 STUDY ALERT: Your task "${task.title}" for subject "${task.subject || 'General'}" has reached its deadline! Time to study! 🎯`;
+  const messageText = `⚠️ DEADLINE EXPIRED ALERT! 🚨\n\nYour task: "${task.title}"\nSubject: "${task.subject || 'General'}"\n\nThis deadline has officially expired! Time to hit the books! 📚🎯`;
 
   if (accountSid && authToken && fromPhone && toPhone) {
     try {
