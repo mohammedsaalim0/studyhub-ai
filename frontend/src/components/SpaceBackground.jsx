@@ -214,12 +214,25 @@ export default function SpaceBackground() {
     rw2.position.set(0.05, -0.04, 0.135);
     headGroup.add(rw2);
 
+    // I. Robotic Back paws
+    const pawGeo = new THREE.SphereGeometry(0.06, 16, 16);
+    const leftPaw = new THREE.Mesh(pawGeo, furMat);
+    leftPaw.position.set(-0.16, -0.5, 0.1);
+    rabbitGroup.add(leftPaw);
+
+    const rightPaw = new THREE.Mesh(pawGeo, furMat);
+    rightPaw.position.set(0.16, -0.5, 0.1);
+    rabbitGroup.add(rightPaw);
+
     // Add head to base rabbit
     rabbitGroup.add(headGroup);
 
     // Position perfectly in the dead center
     rabbitGroup.position.set(0, -0.4, 0.4);
     scene.add(rabbitGroup);
+
+    // --- SOLID WHITE MESHES FOR RAYCASTING (Strictly ignores whiskers/glints!) ---
+    const solidMeshes = [body, head, leftEar, rightEar, leftPaw, rightPaw];
 
     // --- INTERACTIVE RAYCASTING, HOVER & SYNTHESIZED PURR AUDIO ---
     const raycaster = new THREE.Raycaster();
@@ -239,59 +252,89 @@ export default function SpaceBackground() {
     let purrOsc = null;
     let lfoOsc = null;
     let purrGain = null;
+    let harmonicOsc = null;
+
+    let activePurr = null;
+    let activeLfo = null;
+    let activeHarmonic = null;
 
     const startPurrAudio = () => {
       try {
         if (!audioCtx) {
           audioCtx = new (window.AudioContext || window.webkitAudioContext)();
         }
+        
+        // Auto-resume context to bypass browser policies
         if (audioCtx.state === 'suspended') {
           audioCtx.resume();
         }
 
-        // Low warm frequency (purr sound)
+        // 1. Fundamental Low Purr Hum (Set to 85Hz for absolute laptop speaker auditability!)
         purrOsc = audioCtx.createOscillator();
         purrOsc.type = 'triangle';
-        purrOsc.frequency.setValueAtTime(28, audioCtx.currentTime);
+        purrOsc.frequency.setValueAtTime(85, audioCtx.currentTime);
 
-        // LFO to create vibrating rhythmic purr meow modulation (4.8 Hz)
+        // Low-Frequency modulation LFO (4.6Hz) to create vibrating purring rhythm
         lfoOsc = audioCtx.createOscillator();
         lfoOsc.type = 'sine';
-        lfoOsc.frequency.setValueAtTime(4.8, audioCtx.currentTime);
+        lfoOsc.frequency.setValueAtTime(4.6, audioCtx.currentTime);
 
         const lfoGain = audioCtx.createGain();
-        lfoGain.gain.setValueAtTime(0.06, audioCtx.currentTime);
+        lfoGain.gain.setValueAtTime(12, audioCtx.currentTime); // Modulate by 12Hz
 
         lfoOsc.connect(lfoGain);
         lfoGain.connect(purrOsc.frequency);
 
-        // Main output volume fade
+        // 2. High soft harmonic hum (220Hz) to represent loving cat breathing & make it perfectly audible on phone/laptops!
+        harmonicOsc = audioCtx.createOscillator();
+        harmonicOsc.type = 'sine';
+        harmonicOsc.frequency.setValueAtTime(220, audioCtx.currentTime);
+
+        const harmonicLfoGain = audioCtx.createGain();
+        harmonicLfoGain.gain.setValueAtTime(15, audioCtx.currentTime);
+        lfoOsc.connect(harmonicLfoGain);
+        harmonicLfoGain.connect(harmonicOsc.frequency);
+
+        const harmonicVolume = audioCtx.createGain();
+        harmonicVolume.gain.setValueAtTime(0.015, audioCtx.currentTime); // Soft background hum
+
+        harmonicOsc.connect(harmonicVolume);
+
+        // Main output volume gain fade-in
         purrGain = audioCtx.createGain();
         purrGain.gain.setValueAtTime(0, audioCtx.currentTime);
-        purrGain.gain.linearRampToValueAtTime(0.18, audioCtx.currentTime + 0.35); // Smooth fade in
+        purrGain.gain.linearRampToValueAtTime(0.18, audioCtx.currentTime + 0.3); // Smooth fade in
 
         purrOsc.connect(purrGain);
+        harmonicVolume.connect(purrGain);
         purrGain.connect(audioCtx.destination);
 
         purrOsc.start();
+        harmonicOsc.start();
         lfoOsc.start();
+
+        activePurr = purrOsc;
+        activeLfo = lfoOsc;
+        activeHarmonic = harmonicOsc;
       } catch (err) {
-        console.warn("AudioContext bypass active:", err);
+        console.warn("Acoustic purr synthesis failed:", err);
       }
     };
 
     const stopPurrAudio = () => {
       if (purrGain && audioCtx) {
         try {
-          purrGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.3); // Smooth fade out
-          const currentPurr = purrOsc;
-          const currentLfo = lfoOsc;
+          purrGain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.25); // Smooth fade out
+          const p = activePurr;
+          const l = activeLfo;
+          const h = activeHarmonic;
           setTimeout(() => {
             try {
-              currentPurr.stop();
-              currentLfo.stop();
+              if (p) p.stop();
+              if (l) l.stop();
+              if (h) h.stop();
             } catch (e) {}
-          }, 350);
+          }, 300);
         } catch (e) {}
       }
     };
@@ -300,15 +343,19 @@ export default function SpaceBackground() {
       mouseX = (e.clientX - window.innerWidth / 2) / (window.innerWidth / 2);
       mouseY = -(e.clientY - window.innerHeight / 2) / (window.innerHeight / 2);
 
-      // Map mouse for raycasting coordinate grid (-1 to 1)
       mouseVector.x = (e.clientX / window.innerWidth) * 2 - 1;
       mouseVector.y = -(e.clientY / window.innerHeight) * 2 + 1;
     };
 
-    // Click triggers excited jump
+    // Click triggers excited jump ONLY if clicking DIRECTLY on the bunny meshes (stops tab menu issues!)
     const handleScreenClick = () => {
-      if (!isHovered) {
+      if (isHovered && excitedTicks === 0) {
         excitedTicks = 75;
+      }
+      
+      // Auto-resume audio on any click interaction
+      if (audioCtx && audioCtx.state === 'suspended') {
+        audioCtx.resume();
       }
     };
 
@@ -321,12 +368,12 @@ export default function SpaceBackground() {
     const animate = (time) => {
       animationFrameId = requestAnimationFrame(animate);
 
-      // 1. Raycaster hover detection over rabbit meshes
+      // 1. Raycaster checking solid white meshes only (prevents whiskers triggering false hover!)
       raycaster.setFromCamera(mouseVector, camera);
-      const intersects = raycaster.intersectObjects(rabbitGroup.children, true);
+      const intersects = raycaster.intersectObjects(solidMeshes, false);
       const currentlyHovered = intersects.length > 0;
 
-      // Handle hover audio trigger changes
+      // Handle hover audio triggers and state transitions
       if (currentlyHovered && !isHovered) {
         isHovered = true;
         startPurrAudio();
@@ -351,16 +398,15 @@ export default function SpaceBackground() {
       // 5. ANIMATIONS ACCORDING TO HOVER / CLICKS / EMOTIONS
       if (isHovered) {
         // --- HOVER PETTING MODE (Closed eyes + loving cat head shake) ---
-        // A. Close eyes (scale Y to 0)
         leftEye.scale.y = 0.05;
         rightEye.scale.y = 0.05;
 
-        // B. Shake head slowly (left to right sin-wave + loving tilt)
+        // Shake head slowly (left to right sin-wave + loving tilt)
         headGroup.rotation.y = Math.sin(time * 0.0035) * 0.16; // Slow head shake
         headGroup.rotation.x = -0.04 + Math.sin(time * 0.002) * 0.03; // Gentle loving nod
         headGroup.rotation.z = Math.sin(time * 0.002) * 0.04; // Gentle tilt
 
-        // C. Loving floppy ear droops
+        // Loving floppy ear droops
         leftEar.rotation.z = 0.32 + Math.sin(time * 0.002) * 0.03;
         rightEar.rotation.z = -0.32 - Math.sin(time * 0.002) * 0.03;
         
@@ -374,8 +420,10 @@ export default function SpaceBackground() {
         leftEye.scale.y = 1;
         rightEye.scale.y = 1;
 
-        rabbitGroup.rotation.x += (Math.PI * 2) / 75;
-        rabbitGroup.position.y = -0.4 + Math.sin((excitedTicks / 75) * Math.PI) * 0.35;
+        // Progress based rotation (Mathematically guarantees bunny returns upright at exactly 0!)
+        const progress = (75 - excitedTicks) / 75;
+        rabbitGroup.rotation.x = progress * Math.PI * 2;
+        rabbitGroup.position.y = -0.4 + Math.sin(progress * Math.PI) * 0.35;
 
         leftEar.rotation.x = Math.sin(time * 0.02) * 0.4;
         rightEar.rotation.x = Math.cos(time * 0.02) * 0.4;
@@ -464,6 +512,7 @@ export default function SpaceBackground() {
       innerEarGeo.dispose();
       eyeScleraGeo.dispose();
       catchlightGeo.dispose();
+      pawGeo.dispose();
       furMat.dispose();
       innerPinkMat.dispose();
       glassyMat.dispose();
