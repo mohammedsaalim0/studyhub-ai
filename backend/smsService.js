@@ -11,7 +11,13 @@ export function getSimulatedSMSLogs() {
 // Function to send SMS for a specific task
 export async function sendTaskSMS(user, task) {
   const twilioConfig = user.twilioConfig || {};
-  const { accountSid, authToken, fromPhone, toPhone } = twilioConfig;
+  const toPhone = twilioConfig.toPhone;
+
+  // Dynamically resolve Twilio keys: prioritizes user-specific custom settings,
+  // but falls back seamlessly to system environment variables for out-of-the-box SMS alerts!
+  const accountSid = twilioConfig.accountSid || process.env.TWILIO_ACCOUNT_SID;
+  const authToken = twilioConfig.authToken || process.env.TWILIO_AUTH_TOKEN;
+  const fromPhone = twilioConfig.fromPhone || process.env.TWILIO_FROM_PHONE;
 
   const messageText = `📚 STUDY ALERT: Your task "${task.title}" for subject "${task.subject || 'General'}" has reached its deadline! Time to study! 🎯`;
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
-import { BookOpen, Key, User, ArrowRight, ShieldCheck } from 'lucide-react';
+import { BookOpen, Key, User, ArrowRight, ShieldCheck, Smartphone } from 'lucide-react';
 import { playChime } from '../utils/sound';
 
 export default function Login() {
@@ -8,6 +8,7 @@ export default function Login() {
   const [isRegister, setIsRegister] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [phone, setPhone] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -23,6 +24,12 @@ export default function Login() {
       return;
     }
 
+    if (isRegister && !phone) {
+      setError('Please provide your phone number for real-time SMS alerts.');
+      setLoading(false);
+      return;
+    }
+
     if (password.length < 5) {
       setError('Password must be at least 5 characters long.');
       setLoading(false);
@@ -31,7 +38,7 @@ export default function Login() {
 
     try {
       if (isRegister) {
-        await register(username, password);
+        await register(username, password, phone);
       } else {
         await login(username, password);
       }
@@ -166,27 +173,54 @@ export default function Login() {
           </div>
 
           {isRegister && (
-            <div className="slide-up">
-              <label className="label-neon">Confirm Password</label>
-              <div style={{ position: 'relative' }}>
-                <ShieldCheck size={18} color="var(--text-muted)" style={{
-                  position: 'absolute',
-                  left: '14px',
-                  top: '50%',
-                  transform: 'translateY(-50%)'
-                }} />
-                <input
-                  type="password"
-                  className="input-glass"
-                  placeholder="••••••••"
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  required={isRegister}
-                  disabled={loading}
-                  style={{ paddingLeft: '44px' }}
-                />
+            <>
+              <div className="slide-up">
+                <label className="label-neon">Confirm Password</label>
+                <div style={{ position: 'relative' }}>
+                  <ShieldCheck size={18} color="var(--text-muted)" style={{
+                    position: 'absolute',
+                    left: '14px',
+                    top: '50%',
+                    transform: 'translateY(-50%)'
+                  }} />
+                  <input
+                    type="password"
+                    className="input-glass"
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    required={isRegister}
+                    disabled={loading}
+                    style={{ paddingLeft: '44px' }}
+                  />
+                </div>
               </div>
-            </div>
+
+              <div className="slide-up">
+                <label className="label-neon">Phone Number (For Real-Time SMS Alerts)</label>
+                <div style={{ position: 'relative' }}>
+                  <Smartphone size={18} color="var(--text-muted)" style={{
+                    position: 'absolute',
+                    left: '14px',
+                    top: '50%',
+                    transform: 'translateY(-50%)'
+                  }} />
+                  <input
+                    type="tel"
+                    className="input-glass"
+                    placeholder="+919876543210"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    required={isRegister}
+                    disabled={loading}
+                    style={{ paddingLeft: '44px' }}
+                  />
+                </div>
+                <span style={{ fontSize: '0.7rem', color: 'var(--text-secondary)', display: 'block', marginTop: '4px', paddingLeft: '4px' }}>
+                  Include country code (e.g. +91 for India, +1 for USA)
+                </span>
+              </div>
+            </>
           )}
 
           <button

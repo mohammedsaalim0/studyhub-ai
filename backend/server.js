@@ -46,7 +46,7 @@ function authenticateToken(req, res, next) {
 
 // Register
 app.post('/api/auth/register', async (req, res) => {
-  const { username, password } = req.body;
+  const { username, password, phone } = req.body;
   if (!username || !password) {
     return res.status(400).json({ error: 'Please provide both username and password.' });
   }
@@ -66,7 +66,9 @@ app.post('/api/auth/register', async (req, res) => {
     const newUser = db.insert('users', {
       username: username.toLowerCase(),
       passwordHash,
-      twilioConfig: {},
+      twilioConfig: {
+        toPhone: phone || ''
+      },
       geminiApiKey: ''
     });
 
