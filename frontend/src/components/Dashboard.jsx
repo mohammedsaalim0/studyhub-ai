@@ -6,12 +6,19 @@ import {
 } from 'lucide-react';
 import { playAlarm } from '../utils/sound';
 
-export default function Dashboard({ setActiveTab, tasks, notes, plans, refreshData }) {
+export default function Dashboard({ 
+  setActiveTab, 
+  tasks, 
+  notes, 
+  plans, 
+  refreshData, 
+  nextTask, 
+  timeLeft, 
+  activeAlerts, 
+  setActiveAlerts 
+}) {
   const { authFetch } = useAuth();
   const [smsLogs, setSmsLogs] = useState([]);
-  const [nextTask, setNextTask] = useState(null);
-  const [timeLeft, setTimeLeft] = useState('');
-  const [activeAlerts, setActiveAlerts] = useState([]);
 
   // Fetch simulated SMS notifications from server
   const fetchSmsLogs = async () => {
@@ -39,59 +46,6 @@ export default function Dashboard({ setActiveTab, tasks, notes, plans, refreshDa
   const activeTasks = totalTasks - completedTasks;
   const totalNotes = notes.length;
   const totalPlans = plans.length;
-
-  // Find next upcoming task deadline
-  useEffect(() => {
-    const upcoming = tasks
-      .filter(t => !t.completed && new Date(t.deadline) > new Date())
-      .sort((a, b) => new Date(a.deadline) - new Date(b.deadline))[0];
-    
-    setNextTask(upcoming || null);
-  }, [tasks]);
-
-  // Update countdown clock & handle deadline alerts
-  useEffect(() => {
-    if (!nextTask) {
-      setTimeLeft('');
-      return;
-    }
-
-    const interval = setInterval(() => {
-      const diff = new Date(nextTask.deadline) - new Date();
-      
-      if (diff <= 0) {
-        // Deadline reached!
-        setTimeLeft('DEADLINE REACHED! 🚨');
-        
-        // Trigger Sound Alarm!
-        playAlarm();
-        
-        // Dispatch custom event to notify the 3D rabbit background instantly!
-        window.dispatchEvent(new CustomEvent('study-deadline-expired'));
-        
-        // Push visual notification
-        if (!activeAlerts.includes(nextTask.id)) {
-          setActiveAlerts(prev => [...prev, nextTask.id]);
-          refreshData(); // Refresh tasks status to register the SMS sent state
-        }
-        clearInterval(interval);
-      } else {
-        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
-        const mins = Math.floor((diff / 1000 / 60) % 60);
-        const secs = Math.floor((diff / 1000) % 60);
-
-        let timeStr = '';
-        if (days > 0) timeStr += `${days}d `;
-        if (hours > 0 || days > 0) timeStr += `${hours}h `;
-        timeStr += `${mins}m ${secs}s`;
-
-        setTimeLeft(timeStr);
-      }
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [nextTask, activeAlerts]);
 
   // Handle client-side warning popup dismissals
   const dismissAlert = (id) => {

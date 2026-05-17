@@ -62,11 +62,12 @@ export default function History({ tasks, notes, plans }) {
 
     // 3. AI Planners Generated
     plans.forEach(plan => {
+      const focusText = plan.subjectsUnits || plan.syllabus || 'Custom Plan';
       activities.push({
         id: `plan-${plan.id}`,
         type: 'plan',
         title: `AI Schedule Built: Exam Prep Plan`,
-        subtitle: `Topic Focus: ${plan.syllabus.substring(0, 40)}...`,
+        subtitle: `Topic Focus: ${focusText.substring(0, 40)}${focusText.length > 40 ? '...' : ''}`,
         timestamp: plan.createdAt || new Date().toISOString(),
         details: `Configured customized exam countdown schedules using Gemini cognitive AI intelligence.`,
         color: 'var(--neon-pink)',
@@ -98,9 +99,9 @@ export default function History({ tasks, notes, plans }) {
   const filteredActivities = allActivities.filter(act => {
     const matchesFilter = filterType === 'all' || act.type === filterType;
     const matchesSearch = 
-      act.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      act.subtitle.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      act.details.toLowerCase().includes(searchQuery.toLowerCase());
+      (act.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (act.subtitle || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
+      (act.details || '').toLowerCase().includes(searchQuery.toLowerCase());
     return matchesFilter && matchesSearch;
   });
 

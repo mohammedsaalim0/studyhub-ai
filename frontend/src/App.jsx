@@ -12,7 +12,7 @@ import {
   BookOpen, Clock, Brain, Settings as SettingsIcon, 
   LogOut, Shield, User, History as HistoryIcon, Smartphone
 } from 'lucide-react';
-import { playChime } from './utils/sound';
+import { playChime, playAlarm } from './utils/sound';
 
 function MainAppContent() {
   const { user, logout, authFetch } = useAuth();
@@ -25,6 +25,11 @@ function MainAppContent() {
   // PWA installation states
   const [deferredPrompt, setDeferredPrompt] = useState(null);
   const [showInstallBtn, setShowInstallBtn] = useState(true);
+
+  // Global deadline scheduler states
+  const [nextTask, setNextTask] = useState(null);
+  const [timeLeft, setTimeLeft] = useState('');
+  const [activeAlerts, setActiveAlerts] = useState([]);
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e) => {
@@ -55,6 +60,53 @@ function MainAppContent() {
       alert("📲 To install StudyHub AI:\n\n• On Desktop (Chrome/Edge): Click the Install icon in the right side of your URL address bar!\n• On Mobile (iOS Safari): Tap 'Share' (square-arrow icon) then tap 'Add to Home Screen'!\n• On Mobile (Android): Tap the three dots menu in Chrome and choose 'Install App'!");
     }
   };
+
+  // Find next upcoming task deadline (Always active in parent)
+  useEffect(() => {
+    const upcoming = tasks
+      .filter(t => !t.completed && new Date(t.deadline) > new Date())
+      .sort((a, b) => new Date(a.deadline) - new Date(b.deadline))[0];
+    
+    setNextTask(upcoming || null);
+  }, [tasks]);
+
+  // Update countdown clock & handle deadline alerts inside parent (Continuously running)
+  useEffect(() => {
+    if (!nextTask) {
+      setTimeLeft('');
+      return;
+    }
+
+    const interval = setInterval(() => {
+      const diff = new Date(nextTask.deadline) - new Date();
+      
+      if (diff <= 0) {
+        setTimeLeft('DEADLINE REACHED! 🚨');
+        playAlarm();
+        window.dispatchEvent(new CustomEvent('study-deadline-expired'));
+        
+        if (!activeAlerts.includes(nextTask.id)) {
+          setActiveAlerts(prev => [...prev, nextTask.id]);
+          refreshData(); // Refresh tasks status
+        }
+        clearInterval(interval);
+      } else {
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((diff / (1000 * 60 * 60)) % 24);
+        const mins = Math.floor((diff / 1000 / 60) % 60);
+        const secs = Math.floor((diff / 1000) % 60);
+
+        let timeStr = '';
+        if (days > 0) timeStr += `${days}d `;
+        if (hours > 0 || days > 0) timeStr += `${hours}h `;
+        timeStr += `${mins}m ${secs}s`;
+
+        setTimeLeft(timeStr);
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [nextTask, activeAlerts]);
 
   // Sync / refresh all application states
   const refreshData = async () => {
@@ -108,6 +160,10 @@ function MainAppContent() {
             notes={notes} 
             plans={plans} 
             refreshData={refreshData} 
+            nextTask={nextTask}
+            timeLeft={timeLeft}
+            activeAlerts={activeAlerts}
+            setActiveAlerts={setActiveAlerts}
           />
         );
       case 'tasks':
@@ -128,6 +184,10 @@ function MainAppContent() {
             notes={notes} 
             plans={plans} 
             refreshData={refreshData} 
+            nextTask={nextTask}
+            timeLeft={timeLeft}
+            activeAlerts={activeAlerts}
+            setActiveAlerts={setActiveAlerts}
           />
         );
     }

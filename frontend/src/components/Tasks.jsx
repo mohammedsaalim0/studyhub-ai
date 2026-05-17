@@ -420,30 +420,61 @@ export default function Tasks({ tasks, refreshData }) {
                   {isOverdue && <span style={{ color: 'var(--neon-pink)', fontWeight: 600 }}>[OVERDUE]</span>}
                 </div>
 
-                {/* Integration Actions */}
-                {!task.completed && (
-                  <div style={{
-                    display: 'flex',
-                    justifyContent: 'between',
-                    gap: '10px',
-                    marginTop: '8px'
-                  }}>
+                {/* Task Action Controls Row */}
+                <div style={{
+                  display: 'flex',
+                  gap: '10px',
+                  marginTop: '12px',
+                  paddingTop: '12px',
+                  borderTop: '1px solid rgba(255, 255, 255, 0.05)'
+                }}>
+                  <button
+                    onClick={() => handleToggleComplete(task)}
+                    className={`btn-neon ${task.completed ? 'btn-emerald' : 'btn-cyan'}`}
+                    style={{
+                      padding: '8px 14px',
+                      fontSize: '0.75rem',
+                      fontWeight: 700,
+                      flex: 1.3,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      gap: '6px'
+                    }}
+                  >
+                    {task.completed ? (
+                      <>
+                        <CheckCircle2 size={13} />
+                        <span>Completed! 🎉</span>
+                      </>
+                    ) : (
+                      <>
+                        <Circle size={13} />
+                        <span>Complete Task</span>
+                      </>
+                    )}
+                  </button>
+
+                  {!task.completed && (
                     <button
                       onClick={() => handleTestSMS(task)}
                       className="btn-neon btn-violet"
                       style={{
-                        padding: '6px 12px',
-                        fontSize: '0.7rem',
+                        padding: '8px 12px',
+                        fontSize: '0.72rem',
                         flex: 1,
-                        justifyContent: 'center'
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        gap: '6px'
                       }}
                       title="Trigger the backend SMS Notifier immediately for testing"
                     >
-                      <Send size={12} />
-                      Test SMS Alert
+                      <Send size={11} />
+                      <span>Test SMS</span>
                     </button>
-                  </div>
-                )}
+                  )}
+                </div>
               </div>
             );
           })}
