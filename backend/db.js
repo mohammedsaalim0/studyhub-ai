@@ -5,11 +5,32 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// In production Render environment, use the mounted persistent disk path.
-// Otherwise, fall back to the local backend directory.
-const DB_FILE = process.env.RENDER
-  ? '/opt/db/data.json'
-  : path.join(__dirname, 'data.json');
+let DB_FILE = path.join(__dirname, 'data.json');
+
+// In production Render environment, attempt using the persistent mounted SSD path.
+// If the folder is missing, we automatically create it. If we lack permission, 
+// we fall back gracefully to local backend storage to prevent any server crash.
+if (process.env.RENDER) {
+  try {
+    const renderPath = '/opt/db/data.json';
+    const dir = path.dirname(renderPath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    // Verify file creation capability
+    fs.writeFileSync(renderPath, JSON.stringify({ users: [], tasks: [], library: [], study_plans: [] }, null, 2), { flag: 'wx' });
+    DB_FILE = renderPath;
+    console.log('📦 Using persistent Render SSD disk for DB:', DB_FILE);
+  } catch (err) {
+    // If the file already exists (flag wx throws EEXIST), it is completely safe and we use the persistent disk!
+    if (err.code === 'EEXIST') {
+      DB_FILE = '/opt/db/data.json';
+      console.log('📦 Using existing persistent Render SSD disk for DB:', DB_FILE);
+    } else {
+      console.warn('⚠️ Writable Render SSD directory not ready, falling back to local server storage:', err.message);
+    }
+  }
+}
 
 // Initialize database file if it doesn't exist
 function initDb() {

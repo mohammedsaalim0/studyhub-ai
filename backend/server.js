@@ -78,6 +78,7 @@ app.post('/api/auth/register', async (req, res) => {
       user: { id: newUser.id, username: newUser.username }
     });
   } catch (error) {
+    console.error('Registration Exception:', error);
     res.status(500).json({ error: 'Server error during registration. Please try again.' });
   }
 });
@@ -107,6 +108,7 @@ app.post('/api/auth/login', async (req, res) => {
       user: { id: user.id, username: user.username }
     });
   } catch (error) {
+    console.error('Login Exception:', error);
     res.status(500).json({ error: 'Server error during login. Please try again.' });
   }
 });

@@ -1,7 +1,10 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 
 const AuthContext = createContext(null);
-const API_BASE = import.meta.env.VITE_API_URL || '';
+let API_BASE = import.meta.env.VITE_API_URL || '';
+if (API_BASE.endsWith('/')) {
+  API_BASE = API_BASE.slice(0, -1);
+}
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
