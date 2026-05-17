@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
@@ -30,6 +30,7 @@ function MainAppContent() {
   const [nextTask, setNextTask] = useState(null);
   const [timeLeft, setTimeLeft] = useState('');
   const [activeAlerts, setActiveAlerts] = useState([]);
+  const triggeredAlertsRef = useRef(new Set());
 
   useEffect(() => {
     const handleBeforeInstallPrompt = (e) => {
@@ -102,7 +103,8 @@ function MainAppContent() {
         setTimeLeft(timeStr);
 
         // Dispatch alarms & events once per task expiration
-        if (!activeAlerts.includes(nextTask.id)) {
+        if (!triggeredAlertsRef.current.has(nextTask.id)) {
+          triggeredAlertsRef.current.add(nextTask.id);
           setActiveAlerts(prev => [...prev, nextTask.id]);
           playAlarm();
           window.dispatchEvent(new CustomEvent('study-deadline-expired'));
@@ -133,7 +135,7 @@ function MainAppContent() {
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [nextTask, activeAlerts]);
+  }, [nextTask]);
 
   // Sync / refresh all application states
   const refreshData = async () => {

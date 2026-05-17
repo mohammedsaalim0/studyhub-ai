@@ -6,6 +6,7 @@ export default function SpaceBackground() {
   const [showCloud, setShowCloud] = useState(false);
   const [showVictoryCloud, setShowVictoryCloud] = useState(false);
   const [lateTimeStr, setLateTimeStr] = useState('');
+  const lateTimeStrRef = useRef('');
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -526,10 +527,12 @@ export default function SpaceBackground() {
     // Trigger headache state on negative late countdown update
     const handleLateCountdown = (e) => {
       setLateTimeStr(e.detail.timeString);
+      lateTimeStrRef.current = e.detail.timeString;
     };
 
     const handleLateReset = () => {
       setLateTimeStr('');
+      lateTimeStrRef.current = '';
     };
 
     window.addEventListener('mousemove', handleMouseMove);
@@ -580,7 +583,7 @@ export default function SpaceBackground() {
       rightGlint.visible = true;
 
       // ANIMATIONS ACCORDING TO STATE (Late/Headache > Angry > Dance/Happy > Hovered > Excited > Peaceful)
-      if (lateTimeStr) {
+      if (lateTimeStrRef.current) {
         // --- SAD HEADACHE LATE STATE (X X eyes!) ---
         leftX.visible = true;
         rightX.visible = true;
@@ -798,7 +801,7 @@ export default function SpaceBackground() {
       catchlightMat.dispose();
       whiskerMat.dispose();
     };
-  }, [lateTimeStr]);
+  }, []);
 
   return (
     <>
